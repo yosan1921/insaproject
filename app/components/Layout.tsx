@@ -14,11 +14,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navigation = [
     { name: "Dashboard", href: "/dashboard" },
     { name: "Assessment", href: "/questionnaires" },
-    { name:"Risk Analysis", href:"/risk-analysis" },
-    { name: "Risk evaluation", href: "/risk-evaluation" },
+    { name: "Risk Analysis", href: "/risk-analysis" },
+    { name: "Risk Evaluation", href: "/risk-evaluation" },
     { name: "Risk Treatment", href: "/risk-treatment" },
-    { name: "Report&Documentation", href: "/reports" },
+    { name: "Report & Documentation", href: "/reports" },
     { name: "Risk Register", href: "/risks" },
+    { name: "Asset Inventory", href: "/assets" },
+    { name: "Threat Intelligence", href: "/threats" },
     { name: "Profile", href: "/profile" },
   ];
 

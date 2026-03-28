@@ -51,6 +51,8 @@ export async function POST(req: NextRequest) {
       category,
       status: "pending",
       questions,
+      companyDomain: q.company_domain || '',
+      companyIp: q.company_ip || '',
     });
 
     const saved = await newQuestionnaire.save();
@@ -84,6 +86,32 @@ export async function POST(req: NextRequest) {
       } catch (analysisError) {
         console.error(`Auto-analysis failed for ${saved.company}:`, analysisError);
       }
+    }
+
+    // Auto-trigger asset scan if domain or IP provided (non-blocking)
+    const scanTarget = saved.companyDomain || saved.companyIp;
+    if (scanTarget) {
+      (async () => {
+        try {
+          const { scanAndSaveAssets } = await import('@/lib/services/assetScanner');
+          const { fetchAndSaveThreats } = await import('@/lib/services/threatIntelService');
+
+          const scanResult = await scanAndSaveAssets({
+            questionnaireId: String(saved._id),
+            company: saved.company,
+            target: scanTarget,
+          });
+
+          if (scanResult.success && scanResult.assetsFound > 0) {
+            await fetchAndSaveThreats({
+              questionnaireId: String(saved._id),
+              company: saved.company,
+            });
+          }
+        } catch (scanErr: any) {
+          console.error('[AssetScan] Background scan failed:', scanErr.message);
+        }
+      })();
     }
 
     return NextResponse.json({

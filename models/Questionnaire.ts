@@ -24,6 +24,8 @@ export interface IQuestionnaire extends Document {
   status: string;
   questions: IQuestion[];
   tenantId?: string;
+  companyDomain?: string; // Optional: for asset scanning
+  companyIp?: string;     // Optional: for asset scanning
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,7 +53,9 @@ const QuestionnaireSchema = new Schema<IQuestionnaire>(
     category: { type: String, required: true },
     status: { type: String, default: 'pending' },
     questions: [QuestionSchema],
-    tenantId: { type: String }
+    tenantId: { type: String },
+    companyDomain: { type: String, default: '' },
+    companyIp: { type: String, default: '' },
   },
   { timestamps: true }
 );
