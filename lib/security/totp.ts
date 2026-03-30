@@ -59,7 +59,7 @@ export function generateTotpCode(secret: string, timeStep = 30, digits = 6): str
   return otp;
 }
 
-export function verifyTotpCode(secret: string, token: string, window = 1): boolean {
+export function verifyTotpCode(secret: string, token: string, window = 2): boolean {
   const timeStep = 30;
   const digits = 6;
   const currentCounter = Math.floor(Date.now() / 1000 / timeStep);

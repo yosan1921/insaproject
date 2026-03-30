@@ -34,21 +34,26 @@ export async function POST(req: NextRequest) {
   const userId = (session.user as any).id;
   const settings = await MfaSettings.findOne({ userId });
   if (!settings) {
+    console.log('[MFA] No settings found for userId:', userId);
     return NextResponse.json({ error: "MFA not configured for this account" }, { status: 400 });
   }
 
   const secret = decrypt(settings.encryptedSecret);
+  console.log('[MFA] Secret length:', secret.length, 'Code received:', code);
   const ok = verifyTotpCode(secret, code);
+  console.log('[MFA] Verification result:', ok);
   if (!ok) {
     return NextResponse.json({ error: "Invalid MFA code" }, { status: 400 });
   }
 
   const redis = await getRedisClient();
   if (!redis) {
+    console.log('[MFA] Redis not available');
     return NextResponse.json({ error: "MFA infrastructure is not available" }, { status: 503 });
   }
 
   await redis.set(`mfa:verified:${userId}`, "true", { EX: MFA_VERIFIED_TTL_SECONDS });
+  console.log('[MFA] Verified successfully for userId:', userId);
 
   return NextResponse.json({ success: true });
 }

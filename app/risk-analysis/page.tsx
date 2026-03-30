@@ -30,9 +30,9 @@ interface ProcessedAssessment {
 
 type MessageState =
   | {
-      type: "success" | "error";
-      text: string;
-    }
+    type: "success" | "error";
+    text: string;
+  }
   | null;
 
 export default function ProcessedAssessmentsPage() {
@@ -58,6 +58,7 @@ export default function ProcessedAssessmentsPage() {
   const [companyFilter, setCompanyFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [availableCompanies, setAvailableCompanies] = useState<string[]>([]);
+  const [threatMap, setThreatMap] = useState<Record<string, any>>({});
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -127,6 +128,13 @@ export default function ProcessedAssessmentsPage() {
 
   const openAssessmentModal = (assessment: ProcessedAssessment) => {
     setViewingAssessment(assessment);
+    // Fetch threat data for this assessment (non-blocking)
+    fetch(`/api/threats/${assessment._id}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) setThreatMap(prev => ({ ...prev, [assessment._id]: d }));
+      })
+      .catch(() => { });
   };
 
   const closeAssessmentModal = () => setViewingAssessment(null);
@@ -236,11 +244,10 @@ export default function ProcessedAssessmentsPage() {
 
         {message && (
           <div
-            className={`px-4 py-2 rounded ${
-              message.type === "success"
-                ? "bg-green-900/40 text-green-300 border border-green-700"
-                : "bg-red-900/40 text-red-300 border border-red-700"
-            }`}
+            className={`px-4 py-2 rounded ${message.type === "success"
+              ? "bg-green-900/40 text-green-300 border border-green-700"
+              : "bg-red-900/40 text-red-300 border border-red-700"
+              }`}
           >
             {message.text}
           </div>
@@ -317,8 +324,8 @@ export default function ProcessedAssessmentsPage() {
                             <span className="font-medium">Date:</span>{" "}
                             {assessment.date
                               ? new Date(
-                                  assessment.date
-                                ).toLocaleDateString()
+                                assessment.date
+                              ).toLocaleDateString()
                               : "N/A"}
                           </p>
                           <p>
@@ -392,6 +399,36 @@ export default function ProcessedAssessmentsPage() {
                   {(viewingAssessment.analyses || []).length}
                 </p>
               </div>
+
+              {/* Threat Intelligence Summary - additive, non-breaking */}
+              {threatMap[viewingAssessment._id]?.summary?.total > 0 && (
+                <div className="bg-slate-900/50 rounded-lg p-4 border border-orange-500/20">
+                  <p className="text-sm font-semibold text-orange-300 mb-3">
+                    Threat Intelligence Summary
+                  </p>
+                  <div className="grid grid-cols-4 gap-3 mb-3">
+                    {[
+                      { label: "Critical", key: "critical", color: "text-red-400" },
+                      { label: "High", key: "high", color: "text-orange-400" },
+                      { label: "Medium", key: "medium", color: "text-yellow-400" },
+                      { label: "Low", key: "low", color: "text-green-400" },
+                    ].map(s => (
+                      <div key={s.key} className="text-center bg-slate-800 rounded-lg p-2">
+                        <p className={`text-xl font-bold ${s.color}`}>
+                          {threatMap[viewingAssessment._id]?.summary?.[s.key] || 0}
+                        </p>
+                        <p className="text-xs text-slate-400">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span>Max Enhanced Risk Score:</span>
+                    <span className="font-bold text-orange-300">
+                      {threatMap[viewingAssessment._id]?.summary?.maxEnhancedScore || 0}/25
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <h3 className="text-lg font-bold text-white mb-4">

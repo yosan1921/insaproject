@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import MfaSettings from "@/models/MfaSettings";
 import { encrypt } from "@/lib/security/encryption";
+import { decrypt } from "@/lib/security/encryption";
 import { generateTotpSecret, getOtpauthUrl } from "@/lib/security/totp";
 
 function isMfaEnabled() {
@@ -24,16 +25,22 @@ export async function POST(req: NextRequest) {
 
   const userId = (session.user as any).id;
   const existing = await MfaSettings.findOne({ userId });
-  const secret = existing ? undefined : generateTotpSecret();
 
-  const finalSecret = secret || generateTotpSecret();
-  const encryptedSecret = encrypt(finalSecret);
+  let finalSecret: string;
 
-  await MfaSettings.findOneAndUpdate(
-    { userId },
-    { $set: { encryptedSecret } },
-    { upsert: true, new: true }
-  );
+  if (existing) {
+    // Return existing secret so Authy stays in sync
+    finalSecret = decrypt(existing.encryptedSecret);
+  } else {
+    // First time setup - generate new secret and save
+    finalSecret = generateTotpSecret();
+    const encryptedSecret = encrypt(finalSecret);
+    await MfaSettings.findOneAndUpdate(
+      { userId },
+      { $set: { encryptedSecret } },
+      { upsert: true, new: true }
+    );
+  }
 
   const email = session.user.email || "";
   const otpauthUrl = getOtpauthUrl({

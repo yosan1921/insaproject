@@ -40,6 +40,8 @@ export default function AssetsPage() {
     const [ip, setIp] = useState("");
     const [saving, setSaving] = useState(false);
     const [saveMsg, setSaveMsg] = useState("");
+    const [scanning, setScanning] = useState(false);
+    const [scanProgress, setScanProgress] = useState(0);
 
     useEffect(() => {
         fetchAll();
@@ -76,7 +78,26 @@ export default function AssetsPage() {
             const data = await res.json();
             if (data.success) {
                 setSaveMsg("Saved! Asset scan started in background.");
-                setTimeout(() => fetchAll(), 5000);
+                setScanning(true);
+                setScanProgress(0);
+
+                // Progress simulation: 0→90% over 50s, then fetch real results
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 2;
+                    setScanProgress(Math.min(progress, 90));
+                    if (progress >= 90) clearInterval(interval);
+                }, 1000);
+
+                // After 55s fetch results and complete
+                setTimeout(async () => {
+                    clearInterval(interval);
+                    setScanProgress(100);
+                    await fetchAll();
+                    setScanning(false);
+                    setScanProgress(0);
+                    setSaveMsg("Scan complete. Results updated.");
+                }, 55000);
             } else {
                 setSaveMsg(`Error: ${data.error}`);
             }
@@ -147,10 +168,10 @@ export default function AssetsPage() {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={handleSaveDomainIp}
-                            disabled={saving || !selectedQ}
+                            disabled={saving || !selectedQ || scanning}
                             className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-5 py-2 rounded-lg text-sm font-semibold transition"
                         >
-                            {saving ? "Saving & Scanning..." : "Save & Start Scan"}
+                            {saving ? "Saving & Scanning..." : scanning ? "Scanning..." : "Save & Start Scan"}
                         </button>
                         {saveMsg && (
                             <span className={`text-sm ${saveMsg.startsWith("Error") ? "text-red-400" : "text-green-400"}`}>
@@ -158,6 +179,28 @@ export default function AssetsPage() {
                             </span>
                         )}
                     </div>
+
+                    {/* Scan Progress Bar */}
+                    {scanning && (
+                        <div className="mt-4">
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-slate-400 flex items-center gap-2">
+                                    <span className="inline-block w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                                    nmap scanning in progress... please wait
+                                </span>
+                                <span className="text-xs text-blue-400 font-mono">{scanProgress}%</span>
+                            </div>
+                            <div className="w-full bg-slate-700 rounded-full h-2">
+                                <div
+                                    className="bg-blue-500 h-2 rounded-full transition-all duration-1000"
+                                    style={{ width: `${scanProgress}%` }}
+                                />
+                            </div>
+                            <p className="text-xs text-slate-500 mt-1">
+                                This may take up to 60 seconds. Results will appear automatically.
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Assets Table */}

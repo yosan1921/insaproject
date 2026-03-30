@@ -148,6 +148,25 @@ export default function ReportsPage() {
     }
   };
 
+  const handleGenerateExcel = async (assessment: Assessment) => {
+    try {
+      const response = await fetch(`/api/reports/export-excel?analysisId=${assessment._id}`);
+      if (!response.ok) throw new Error("Failed to generate Excel report");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `report-${assessment.company}-${new Date(assessment.date).toISOString().split("T")[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error generating Excel report:", error);
+      alert("Error generating Excel report");
+    }
+  };
+
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedAssessment(null);
@@ -278,6 +297,12 @@ export default function ReportsPage() {
                       className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition text-sm font-medium"
                     >
                       Generate Report
+                    </button>
+                    <button
+                      onClick={() => handleGenerateExcel(assessment)}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition text-sm font-medium"
+                    >
+                      Export Excel
                     </button>
                     {(() => {
                       const reg = registrations.find(r => r.analysisId === assessment._id);
