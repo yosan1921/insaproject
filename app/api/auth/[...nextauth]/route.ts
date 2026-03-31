@@ -77,24 +77,18 @@ authOptions.callbacks = {
 		const token: any = originalJwt ? await originalJwt(params as any) : params.token;
 
 		if (isMfaEnabled()) {
-			// Only enable MFA when backing services are configured
-			if (!mfaDependenciesAvailable()) {
-				return token;
-			}
-
 			// On initial sign-in, decide whether MFA is required based on role
 			if (params.user) {
 				const role = (params.user as any).role as string | undefined;
 				token.mfaRequired = role ? mfaRequiredRoles.includes(role) : false;
+				// Always reset mfaVerified on fresh login - user must verify again
+				token.mfaVerified = false;
+				return token;
 			}
 
-			// Refresh mfaVerified flag from Redis so it can be toggled by the MFA verify route
-			if (token.id && token.mfaRequired) {
-				const redis = await getRedisClient();
-				if (redis) {
-					const verified = await redis.get(`mfa:verified:${token.id}`);
-					token.mfaVerified = verified === "true";
-				}
+			// Handle session update from MFA verification page
+			if ((params as any).trigger === "update" && (params as any).session?.mfaVerified === true) {
+				token.mfaVerified = true;
 			}
 		}
 

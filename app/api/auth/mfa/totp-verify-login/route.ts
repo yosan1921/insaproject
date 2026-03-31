@@ -5,9 +5,6 @@ import dbConnect from "@/lib/mongodb";
 import MfaSettings from "@/models/MfaSettings";
 import { decrypt } from "@/lib/security/encryption";
 import { verifyTotpCode } from "@/lib/security/totp";
-import { getRedisClient } from "@/lib/services/redis";
-
-const MFA_VERIFIED_TTL_SECONDS = 60 * 60; // 1 hour
 
 function isMfaEnabled() {
   return process.env.MFA_ENABLED === "true";
@@ -34,26 +31,25 @@ export async function POST(req: NextRequest) {
   const userId = (session.user as any).id;
   const settings = await MfaSettings.findOne({ userId });
   if (!settings) {
-    console.log('[MFA] No settings found for userId:', userId);
     return NextResponse.json({ error: "MFA not configured for this account" }, { status: 400 });
   }
 
   const secret = decrypt(settings.encryptedSecret);
-  console.log('[MFA] Secret length:', secret.length, 'Code received:', code);
   const ok = verifyTotpCode(secret, code);
-  console.log('[MFA] Verification result:', ok);
   if (!ok) {
     return NextResponse.json({ error: "Invalid MFA code" }, { status: 400 });
   }
 
-  const redis = await getRedisClient();
-  if (!redis) {
-    console.log('[MFA] Redis not available');
-    return NextResponse.json({ error: "MFA infrastructure is not available" }, { status: 503 });
+  // Store verified flag in Redis if available (optional, for distributed setups)
+  try {
+    const { getRedisClient } = await import('@/lib/services/redis');
+    const redis = await getRedisClient();
+    if (redis) {
+      await redis.set(`mfa:verified:${userId}`, "true", { EX: 60 * 60 });
+    }
+  } catch {
+    // Redis is optional - JWT will handle verification state
   }
 
-  await redis.set(`mfa:verified:${userId}`, "true", { EX: MFA_VERIFIED_TTL_SECONDS });
-  console.log('[MFA] Verified successfully for userId:', userId);
-
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, mfaVerified: true });
 }
