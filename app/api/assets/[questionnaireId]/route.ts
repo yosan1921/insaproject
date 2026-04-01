@@ -53,6 +53,14 @@ export async function PATCH(req: Request, { params }: { params: { questionnaireI
                         questionnaireId: String(questionnaire._id),
                         company: questionnaire.company,
                     });
+                    // Notify asset scan completion
+                    try {
+                        const { notifyAssetScan } = await import('@/lib/services/notificationService');
+                        await notifyAssetScan({
+                            company: questionnaire.company,
+                            assetsFound: scanResult.assetsFound,
+                        });
+                    } catch { }
                 }
             } catch (e) {
                 console.error('[AssetScan] Background scan failed:', e);

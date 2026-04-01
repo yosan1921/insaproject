@@ -71,6 +71,19 @@ export async function POST(req: NextRequest) {
             });
 
             results.push({ externalId, status: 'created', id: questionnaire._id });
+
+            // Notify Directors and Division Heads about new questionnaire
+            try {
+                const { notifyNewQuestionnaire } = await import('@/lib/services/notificationService');
+                await notifyNewQuestionnaire({
+                    company: questionnaire.company,
+                    filledBy: questionnaire.filledBy,
+                    role: questionnaire.role,
+                    questionnaireId: String(questionnaire._id),
+                });
+            } catch (notifErr) {
+                console.error('Notification failed (non-critical):', notifErr);
+            }
         }
 
         return NextResponse.json({ success: true, results });

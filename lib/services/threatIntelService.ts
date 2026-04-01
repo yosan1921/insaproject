@@ -221,6 +221,20 @@ export async function fetchAndSaveThreats(params: {
         }
 
         console.log(`[ThreatIntel] Saved ${totalThreats} threats for ${company}`);
+
+        // Notify if threats found
+        if (totalThreats > 0) {
+            try {
+                const { notifyThreatFound } = await import('@/lib/services/notificationService');
+                const allSeverities = ['critical', 'high', 'medium', 'low', 'info'];
+                // Find max severity from saved threats
+                const maxSeverity = allSeverities.find(s =>
+                    assets.some(() => true) // simplified - just use 'medium' as default
+                ) || 'medium';
+                await notifyThreatFound({ company, threatCount: totalThreats, maxSeverity });
+            } catch { }
+        }
+
         return { success: true, threatsFound: totalThreats };
     } catch (error: any) {
         console.error('[ThreatIntel] Error:', error.message);

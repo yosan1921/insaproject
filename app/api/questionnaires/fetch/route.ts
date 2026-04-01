@@ -58,6 +58,19 @@ export async function POST(req: NextRequest) {
     const saved = await newQuestionnaire.save();
     console.log(`Questionnaire accepted: ${saved.company} (${saved._id})`);
 
+    // Notify Directors and Division Heads about new questionnaire
+    try {
+      const { notifyNewQuestionnaire } = await import('@/lib/services/notificationService');
+      await notifyNewQuestionnaire({
+        company: saved.company,
+        filledBy: saved.filledBy,
+        role: saved.role,
+        questionnaireId: String(saved._id),
+      });
+    } catch (notifErr) {
+      console.error('Notification failed (non-critical):', notifErr);
+    }
+
     // Automatically analyze
     if (openRouterApiKey && questions.length > 0) {
       try {
@@ -107,6 +120,11 @@ export async function POST(req: NextRequest) {
               questionnaireId: String(saved._id),
               company: saved.company,
             });
+            // Notify asset scan completion
+            try {
+              const { notifyAssetScan } = await import('@/lib/services/notificationService');
+              await notifyAssetScan({ company: saved.company, assetsFound: scanResult.assetsFound });
+            } catch { }
           }
         } catch (scanErr: any) {
           console.error('[AssetScan] Background scan failed:', scanErr.message);
