@@ -77,11 +77,29 @@ authOptions.callbacks = {
 		const token: any = originalJwt ? await originalJwt(params as any) : params.token;
 
 		if (isMfaEnabled()) {
-			// On initial sign-in, decide whether MFA is required based on role
+			// On initial sign-in, decide whether MFA is required based on role AND setup
 			if (params.user) {
 				const role = (params.user as any).role as string | undefined;
-				token.mfaRequired = role ? mfaRequiredRoles.includes(role) : false;
-				// Always reset mfaVerified on fresh login - user must verify again
+				const roleRequiresMfa = role ? mfaRequiredRoles.includes(role) : false;
+
+				if (roleRequiresMfa) {
+					// Only require MFA if user has already set up their authenticator
+					try {
+						const { default: dbConnect } = await import('@/lib/mongodb');
+						const { default: MfaSettings } = await import('@/models/MfaSettings');
+						await dbConnect();
+						const hasMfaSetup = await MfaSettings.findOne({ userId: (params.user as any).id });
+						token.mfaRequired = !!hasMfaSetup;
+						token.mfaSetupRequired = !hasMfaSetup; // prompt to set up
+					} catch {
+						token.mfaRequired = false;
+						token.mfaSetupRequired = true;
+					}
+				} else {
+					token.mfaRequired = false;
+					token.mfaSetupRequired = false;
+				}
+
 				token.mfaVerified = false;
 				return token;
 			}
@@ -104,6 +122,9 @@ authOptions.callbacks = {
 			}
 			if (typeof token.mfaVerified !== "undefined") {
 				(session.user as any).mfaVerified = token.mfaVerified;
+			}
+			if (typeof token.mfaSetupRequired !== "undefined") {
+				(session.user as any).mfaSetupRequired = token.mfaSetupRequired;
 			}
 		}
 

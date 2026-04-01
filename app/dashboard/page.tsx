@@ -171,6 +171,9 @@ export default function DashboardPage() {
 
   if (!session) return null;
 
+  const user: any = session.user;
+  const showMfaSetupBanner = user?.mfaSetupRequired === true;
+
   const filteredAssessments = filterItems(processedAssessments).sort(
     (a, b) => {
       const dateA = a.date ? new Date(a.date).getTime() : 0;
@@ -224,6 +227,25 @@ export default function DashboardPage() {
     <Layout>
       <div className="space-y-6">
         <h1 className="text-3xl font-bold text-white">Risk Dashboard</h1>
+
+        {/* MFA Setup Reminder */}
+        {showMfaSetupBanner && (
+          <div className="bg-yellow-900/30 border border-yellow-600/50 rounded-lg p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-yellow-400 text-xl">⚠️</span>
+              <div>
+                <p className="text-yellow-300 font-semibold text-sm">Secure your account with Two-Factor Authentication</p>
+                <p className="text-yellow-400/70 text-xs mt-0.5">Set up an authenticator app to protect your account.</p>
+              </div>
+            </div>
+            <a
+              href="/profile/mfa"
+              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-semibold rounded-lg transition whitespace-nowrap"
+            >
+              Set Up MFA
+            </a>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="bg-slate-800 rounded-lg border border-slate-700 p-6">

@@ -93,6 +93,13 @@ export default function MfaPage() {
             {loading ? "Verifying..." : "Verify"}
           </button>
         </form>
+
+        <p className="mt-6 text-center text-slate-400 text-sm">
+          Haven&apos;t set up your authenticator app yet?{" "}
+          <a href="/profile/mfa" className="text-blue-400 hover:text-blue-300">
+            Set it up here first
+          </a>
+        </p>
       </div>
     </div>
   );

@@ -27,13 +27,9 @@ export default function ProfileMfaPage() {
       try {
         const res = await fetch("/api/auth/mfa/totp-setup", { method: "POST" });
         if (!res.ok) {
-          if (res.status === 401) {
-            router.replace("/login");
-            return;
-          }
           const data = await res.json().catch(() => ({}));
           if (!cancelled) {
-            setError(data.error || "Failed to initialize MFA setup.");
+            setError(data.error || `Setup failed (${res.status}). Please try again.`);
           }
           return;
         }
@@ -75,8 +71,9 @@ export default function ProfileMfaPage() {
       if (!res.ok) {
         setError(data.error || "Invalid code");
       } else {
-        setInfo("MFA successfully enabled and verified.");
+        setInfo("MFA successfully enabled! Redirecting...");
         setCode("");
+        setTimeout(() => router.push("/mfa"), 1500);
       }
     } catch (err) {
       console.error(err);

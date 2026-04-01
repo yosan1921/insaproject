@@ -1,8 +1,9 @@
 import crypto from "crypto";
 
-// Minimal TOTP implementation compatible with Google Authenticator/Authy.
+// Standard RFC 6238 TOTP implementation using Node.js built-in crypto
+// Compatible with Google Authenticator and Authy
 
-function base32ToBuffer(base32: string): Buffer {
+function base32Decode(base32: string): Buffer {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
   const cleaned = base32.replace(/=+$/g, "").toUpperCase();
   let bits = "";
@@ -18,14 +19,39 @@ function base32ToBuffer(base32: string): Buffer {
   return Buffer.from(bytes);
 }
 
-export function generateTotpSecret(length = 20): string {
+function base32Encode(buffer: Buffer): string {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-  const bytes = crypto.randomBytes(length);
-  let out = "";
-  for (let i = 0; i < bytes.length; i++) {
-    out += alphabet[bytes[i] % alphabet.length];
+  let bits = "";
+  for (const byte of buffer) {
+    bits += byte.toString(2).padStart(8, "0");
   }
-  return out;
+  let result = "";
+  for (let i = 0; i + 5 <= bits.length; i += 5) {
+    result += alphabet[parseInt(bits.slice(i, i + 5), 2)];
+  }
+  return result;
+}
+
+function computeHotp(secret: string, counter: number, digits = 6): string {
+  const key = base32Decode(secret);
+  const buf = Buffer.alloc(8);
+  // Write counter as 64-bit big-endian
+  const high = Math.floor(counter / 0x100000000);
+  const low = counter >>> 0;
+  buf.writeUInt32BE(high, 0);
+  buf.writeUInt32BE(low, 4);
+  const hmac = crypto.createHmac("sha1", key).update(buf).digest();
+  const offset = hmac[hmac.length - 1] & 0xf;
+  const code =
+    ((hmac[offset] & 0x7f) << 24) |
+    ((hmac[offset + 1] & 0xff) << 16) |
+    ((hmac[offset + 2] & 0xff) << 8) |
+    (hmac[offset + 3] & 0xff);
+  return (code % 10 ** digits).toString().padStart(digits, "0");
+}
+
+export function generateTotpSecret(): string {
+  return base32Encode(crypto.randomBytes(20));
 }
 
 export function getOtpauthUrl(options: {
@@ -35,50 +61,18 @@ export function getOtpauthUrl(options: {
 }): string {
   const label = encodeURIComponent(`${options.issuer}:${options.accountName}`);
   const issuer = encodeURIComponent(options.issuer);
-  const secret = options.secret;
-  return `otpauth://totp/${label}?secret=${secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
+  return `otpauth://totp/${label}?secret=${options.secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
 }
 
-export function generateTotpCode(secret: string, timeStep = 30, digits = 6): string {
-  const counter = Math.floor(Date.now() / 1000 / timeStep);
-  const buffer = Buffer.alloc(8);
-  buffer.writeUInt32BE(0, 0);
-  buffer.writeUInt32BE(counter, 4);
-
-  const key = base32ToBuffer(secret);
-  const hmac = crypto.createHmac("sha1", key).update(buffer).digest();
-
-  const offset = hmac[hmac.length - 1] & 0xf;
-  const code =
-    ((hmac[offset] & 0x7f) << 24) |
-    ((hmac[offset + 1] & 0xff) << 16) |
-    ((hmac[offset + 2] & 0xff) << 8) |
-    (hmac[offset + 3] & 0xff);
-
-  const otp = (code % 10 ** digits).toString().padStart(digits, "0");
-  return otp;
+export function generateTotpCode(secret: string): string {
+  const counter = Math.floor(Date.now() / 1000 / 30);
+  return computeHotp(secret, counter);
 }
 
-export function verifyTotpCode(secret: string, token: string, window = 2): boolean {
-  const timeStep = 30;
-  const digits = 6;
-  const currentCounter = Math.floor(Date.now() / 1000 / timeStep);
-  for (let offset = -window; offset <= window; offset++) {
-    const counter = currentCounter + offset;
-    const buffer = Buffer.alloc(8);
-    buffer.writeUInt32BE(0, 0);
-    buffer.writeUInt32BE(counter, 4);
-
-    const key = base32ToBuffer(secret);
-    const hmac = crypto.createHmac("sha1", key).update(buffer).digest();
-    const pos = hmac[hmac.length - 1] & 0xf;
-    const code =
-      ((hmac[pos] & 0x7f) << 24) |
-      ((hmac[pos + 1] & 0xff) << 16) |
-      ((hmac[pos + 2] & 0xff) << 8) |
-      (hmac[pos + 3] & 0xff);
-    const otp = (code % 10 ** digits).toString().padStart(digits, "0");
-    if (otp === token) return true;
+export function verifyTotpCode(secret: string, token: string, window = 1): boolean {
+  const counter = Math.floor(Date.now() / 1000 / 30);
+  for (let i = -window; i <= window; i++) {
+    if (computeHotp(secret, counter + i) === token) return true;
   }
   return false;
 }
