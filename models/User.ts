@@ -25,6 +25,7 @@ const UserSchema: Schema<IUser> = new Schema(
     },
     name: { type: String },
     tenantId: { type: String },
+    lastActive: { type: Date }, // For online status
   },
   {
     timestamps: true,

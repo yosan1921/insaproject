@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { SessionProvider } from "./components/SessionProvider";
+import ChatWidget from "./components/ChatWidget";
 
 export const metadata: Metadata = {
   title: "CSRARS - Cyber Security Risk Analysis & Reporting System",
@@ -20,7 +21,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body>
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          {children}
+          <ChatWidget />
+        </SessionProvider>
       </body>
     </html>
   );
