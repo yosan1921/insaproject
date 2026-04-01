@@ -16,8 +16,15 @@ export async function GET() {
         const userId = (session.user as any).id;
         const role = (session.user as any).role;
 
-        // All roles see all notifications (RBAC can be extended later)
-        const notifications = await Notification.find({})
+        // RBAC: filter notifications based on role
+        let typeFilter: object = {};
+        if (role === 'Staff' || role === 'Risk Analyst') {
+            // Staff and Risk Analyst only see questionnaire and analysis notifications
+            typeFilter = { type: { $in: ['questionnaire', 'analysis'] } };
+        }
+        // Director and Division Head see all notifications
+
+        const notifications = await Notification.find(typeFilter)
             .sort({ createdAt: -1 })
             .limit(50)
             .lean();
