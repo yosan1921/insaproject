@@ -84,6 +84,58 @@ export async function POST(req: NextRequest) {
             } catch (notifErr) {
                 console.error('Notification failed (non-critical):', notifErr);
             }
+
+            // Auto-analysis (non-blocking)
+            const openRouterApiKey = process.env.OPENROUTER_API_KEY;
+            if (openRouterApiKey && questions.length > 0) {
+                (async () => {
+                    try {
+                        const { performRiskAnalysis } = await import('@/lib/services/riskAnalyzer');
+                        const RiskAnalysis = (await import('@/models/RiskAnalysis')).default;
+
+                        const analysisResults = await performRiskAnalysis(questions, openRouterApiKey);
+
+                        const riskAnalysis = new RiskAnalysis({
+                            questionnaireId: questionnaire._id,
+                            company: questionnaire.company,
+                            category: questionnaire.category,
+                            metadata: analysisResults.metadata,
+                            operational: analysisResults.operational,
+                            tactical: analysisResults.tactical,
+                            strategic: analysisResults.strategic,
+                            summary: analysisResults.summary,
+                        });
+
+                        await riskAnalysis.save();
+                        await questionnaire.updateOne({ status: 'analyzed' });
+
+                        console.log(`Auto-analysis completed for webhook: ${questionnaire.company}`);
+
+                        // Send analysis notifications
+                        const { notifyAnalysisComplete, notifyCriticalRisk } = await import('@/lib/services/notificationService');
+                        const overall = analysisResults.summary?.overall;
+                        const overallRisk = overall?.riskDistribution?.CRITICAL > 0 ? 'CRITICAL' :
+                            overall?.riskDistribution?.HIGH > 0 ? 'HIGH' :
+                                overall?.riskDistribution?.MEDIUM > 0 ? 'MEDIUM' : 'LOW';
+
+                        await notifyAnalysisComplete({
+                            company: questionnaire.company,
+                            analysisId: String(riskAnalysis._id),
+                            overallRisk,
+                        });
+
+                        if (overall?.riskDistribution?.CRITICAL > 0) {
+                            await notifyCriticalRisk({
+                                company: questionnaire.company,
+                                analysisId: String(riskAnalysis._id),
+                                criticalCount: overall.riskDistribution.CRITICAL,
+                            });
+                        }
+                    } catch (err: any) {
+                        console.error('Auto-analysis failed for webhook:', err.message);
+                    }
+                })();
+            }
         }
 
         return NextResponse.json({ success: true, results });
