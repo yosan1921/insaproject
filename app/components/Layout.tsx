@@ -19,6 +19,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       .then(r => r.json())
       .then(d => setUnreadCount(d.count || 0))
       .catch(() => { });
+
+    // Real-time badge update via SSE
+    if (typeof window === "undefined") return;
+
+    const es = new EventSource("/api/notifications/stream");
+    es.addEventListener("notification", () => {
+      fetch("/api/notifications/count")
+        .then(r => r.json())
+        .then(d => setUnreadCount(d.count || 0))
+        .catch(() => { });
+    });
+
+    return () => es.close();
   }, []);
 
   const navigation = [

@@ -14,8 +14,16 @@ export async function GET() {
 
         await dbConnect();
         const userId = new mongoose.Types.ObjectId((session.user as any).id);
+        const role = (session.user as any).role;
+
+        // Apply same RBAC filter as notifications list
+        let typeFilter: object = {};
+        if (role === 'Staff' || role === 'Risk Analyst') {
+            typeFilter = { type: { $in: ['questionnaire', 'analysis'] } };
+        }
 
         const count = await Notification.countDocuments({
+            ...typeFilter,
             readBy: { $ne: userId },
         });
 

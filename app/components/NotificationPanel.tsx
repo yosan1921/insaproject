@@ -75,11 +75,12 @@ export default function NotificationPanel({ onClose, onCountChange }: {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ notificationId: id }),
         });
-        setNotifications(prev =>
-            prev.map(n => n.id === id ? { ...n, read: true } : n)
-        );
-        const unread = notifications.filter(n => !n.read && n.id !== id).length;
-        onCountChange?.(unread);
+        setNotifications(prev => {
+            const updated = prev.map(n => n.id === id ? { ...n, read: true } : n);
+            const unread = updated.filter(n => !n.read).length;
+            onCountChange?.(unread);
+            return updated;
+        });
     };
 
     const markAllAsRead = async () => {
@@ -135,8 +136,8 @@ export default function NotificationPanel({ onClose, onCountChange }: {
                         key={f}
                         onClick={() => setFilter(f)}
                         className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap transition capitalize ${filter === f
-                                ? "bg-blue-600 text-white"
-                                : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                            ? "bg-blue-600 text-white"
+                            : "bg-slate-700 text-slate-300 hover:bg-slate-600"
                             }`}
                     >
                         {f}

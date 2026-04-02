@@ -226,11 +226,16 @@ export async function fetchAndSaveThreats(params: {
         if (totalThreats > 0) {
             try {
                 const { notifyThreatFound } = await import('@/lib/services/notificationService');
-                const allSeverities = ['critical', 'high', 'medium', 'low', 'info'];
-                // Find max severity from saved threats
-                const maxSeverity = allSeverities.find(s =>
-                    assets.some(() => true) // simplified - just use 'medium' as default
-                ) || 'medium';
+                // Find actual max severity from saved threats
+                const severityOrder = ['critical', 'high', 'medium', 'low', 'info'];
+                const savedThreats = await ThreatIntelligence.find({ questionnaireId }).lean();
+                let maxSeverity = 'info';
+                for (const sev of severityOrder) {
+                    if (savedThreats.some((t: any) => t.severity === sev)) {
+                        maxSeverity = sev;
+                        break;
+                    }
+                }
                 await notifyThreatFound({ company, threatCount: totalThreats, maxSeverity });
             } catch { }
         }

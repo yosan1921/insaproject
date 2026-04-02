@@ -95,6 +95,31 @@ export async function POST(req: NextRequest) {
           await saved.save();
 
           console.log(`Auto-analysis completed for: ${saved.company}`);
+
+          // Send notifications for auto-analysis
+          try {
+            const { notifyAnalysisComplete, notifyCriticalRisk } = await import('@/lib/services/notificationService');
+            const overall = analysisResults.summary?.overall;
+            const overallRisk = overall?.riskDistribution?.CRITICAL > 0 ? 'CRITICAL' :
+              overall?.riskDistribution?.HIGH > 0 ? 'HIGH' :
+                overall?.riskDistribution?.MEDIUM > 0 ? 'MEDIUM' : 'LOW';
+
+            await notifyAnalysisComplete({
+              company: saved.company,
+              analysisId: String(riskAnalysis._id),
+              overallRisk,
+            });
+
+            if (overall?.riskDistribution?.CRITICAL > 0) {
+              await notifyCriticalRisk({
+                company: saved.company,
+                analysisId: String(riskAnalysis._id),
+                criticalCount: overall.riskDistribution.CRITICAL,
+              });
+            }
+          } catch (notifErr) {
+            console.error('Analysis notification failed (non-critical):', notifErr);
+          }
         }
       } catch (analysisError) {
         console.error(`Auto-analysis failed for ${saved.company}:`, analysisError);
