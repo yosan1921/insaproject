@@ -167,6 +167,44 @@ export default function ReportsPage() {
     }
   };
 
+  const handleGeneratePdf = async (assessment: Assessment) => {
+    try {
+      const response = await fetch(`/api/reports/export-pdf?analysisId=${assessment._id}`);
+      if (!response.ok) throw new Error("Failed to generate PDF report");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `report-${assessment.company}-${new Date(assessment.date).toISOString().split("T")[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error generating PDF report:", error);
+      alert("Error generating PDF report");
+    }
+  };
+
+  const handleGeneratePptx = async (assessment: Assessment) => {
+    try {
+      const response = await fetch(`/api/reports/export-pptx?analysisId=${assessment._id}`);
+      if (!response.ok) throw new Error("Failed to generate PPTX report");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `report-${assessment.company}-${new Date(assessment.date).toISOString().split("T")[0]}.pptx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error generating PPTX report:", error);
+      alert("Error generating PPTX report");
+    }
+  };
+
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedAssessment(null);
@@ -303,6 +341,18 @@ export default function ReportsPage() {
                       className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition text-sm font-medium"
                     >
                       Export Excel
+                    </button>
+                    <button
+                      onClick={() => handleGeneratePdf(assessment)}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition text-sm font-medium"
+                    >
+                      Export PDF
+                    </button>
+                    <button
+                      onClick={() => handleGeneratePptx(assessment)}
+                      className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md transition text-sm font-medium"
+                    >
+                      Export PPTX
                     </button>
                     {(() => {
                       const reg = registrations.find(r => r.analysisId === assessment._id);

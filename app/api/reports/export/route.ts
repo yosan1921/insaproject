@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
 import { generateDocxReport } from "@/lib/services/reportService";
 
 export async function GET(request: Request) {
@@ -34,7 +33,7 @@ export async function GET(request: Request) {
     const buffer = await generateDocxReport(analysisId);
 
     // Return as file download
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {
         "Content-Type":

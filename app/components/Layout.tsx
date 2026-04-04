@@ -46,6 +46,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { name: "Risk Register", href: "/risks" },
     { name: "Asset Inventory", href: "/assets" },
     { name: "Threat Intelligence", href: "/threats" },
+    { name: "Trend Analysis", href: "/trends" },
+    { name: "Feedback", href: "/feedback" },
     { name: "Profile", href: "/profile" },
   ];
 

@@ -23,6 +23,7 @@
     "nodemailer": "^7.0.13",
     "openai": "^4.104.0",
     "otplib": "^13.4.0",
+    "pdfkit": "^0.18.0",
     "pptxgenjs": "^3.12.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",

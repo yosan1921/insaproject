@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import MfaSettings from "@/models/MfaSettings";
 import { decrypt } from "@/lib/security/encryption";
-import { verifyTotpCode, generateTotpCode } from "@/lib/security/totp";
+import { verifyTotpCode } from "@/lib/security/totp";
 
 function isMfaEnabled() {
   return process.env.MFA_ENABLED === "true";
@@ -35,8 +35,6 @@ export async function POST(req: NextRequest) {
   }
 
   const secret = decrypt(settings.encryptedSecret);
-  const expected = generateTotpCode(secret);
-  console.log('[MFA] Expected:', expected, 'Received:', code, 'Secret length:', secret.length);
   const ok = verifyTotpCode(secret, code);
   if (!ok) {
     return NextResponse.json({ error: "Invalid MFA code" }, { status: 400 });
