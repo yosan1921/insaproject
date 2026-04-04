@@ -9,7 +9,7 @@ export async function GET() {
 
     const questionnaires = await Questionnaire.find()
       .sort({ createdAt: -1 })
-      .select('title company filledBy role filledDate status questions')
+      .select('title company filledBy role filledDate status questions category')
       .lean();
 
     const formattedQuestionnaires = questionnaires.map(q => ({
@@ -21,7 +21,8 @@ export async function GET() {
       date: q.filledDate,
       status: q.status || 'pending',
       responseCount: q.questions?.length || 0,
-      questions: q.questions || []
+      questions: q.questions || [],
+      category: q.category || 'operational'
     }));
 
     return NextResponse.json({

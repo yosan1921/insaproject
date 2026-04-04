@@ -23,6 +23,7 @@ export interface IQuestionAnalysis {
 }
 
 export interface IRiskAnalysis extends Document {
+  riskRegisterId?: string; // Unique Risk Register ID (e.g., RR-2026-0001) - auto-generated
   questionnaireId: mongoose.Types.ObjectId;
   company: string;
   category: string;
@@ -73,6 +74,11 @@ const QuestionAnalysisSchema = new Schema({
 
 const RiskAnalysisSchema = new Schema<IRiskAnalysis>(
   {
+    riskRegisterId: {
+      type: String,
+      unique: true,
+      sparse: true // Allow null/undefined temporarily before pre-save hook runs
+    },
     questionnaireId: {
       type: Schema.Types.ObjectId,
       ref: 'Questionnaire',
@@ -99,8 +105,42 @@ const RiskAnalysisSchema = new Schema<IRiskAnalysis>(
   { timestamps: true }
 );
 
+// Auto-generate Risk Register ID before saving
+RiskAnalysisSchema.pre('save', async function (next) {
+  if (!this.riskRegisterId) {
+    try {
+      const year = new Date().getFullYear();
+
+      // Find the highest existing sequence number for this year
+      const latestRisk = await mongoose.model('RiskAnalysis')
+        .findOne({ riskRegisterId: new RegExp(`^RR-${year}-`) })
+        .sort({ riskRegisterId: -1 })
+        .select('riskRegisterId')
+        .lean();
+
+      let nextNumber = 1;
+      if (latestRisk && latestRisk.riskRegisterId) {
+        const match = latestRisk.riskRegisterId.match(/RR-\d{4}-(\d{4})/);
+        if (match) {
+          nextNumber = parseInt(match[1], 10) + 1;
+        }
+      }
+
+      const sequenceNumber = String(nextNumber).padStart(4, '0');
+      this.riskRegisterId = `RR-${year}-${sequenceNumber}`;
+    } catch (error) {
+      console.error('Error generating Risk Register ID:', error);
+      // Fallback to simple counter
+      const count = await mongoose.model('RiskAnalysis').countDocuments();
+      const sequenceNumber = String(count + 1).padStart(4, '0');
+      this.riskRegisterId = `RR-${new Date().getFullYear()}-${sequenceNumber}`;
+    }
+  }
+  next();
+});
+
 // Create index for faster queries
-RiskAnalysisSchema.index({ questionnaireId: 1 });
+// Note: questionnaireId and riskRegisterId indexes are automatically created by unique: true
 RiskAnalysisSchema.index({ company: 1, createdAt: -1 });
 
 const RiskAnalysis: Model<IRiskAnalysis> =

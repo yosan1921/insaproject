@@ -23,6 +23,7 @@ interface QuestionAnalysis {
 
 interface ProcessedAssessment {
   _id: string; // RiskAnalysis _id
+  riskRegisterId: string; // Risk Register ID
   company: string;
   category: string;
   date: string;
@@ -143,6 +144,7 @@ export default function RiskRegisterFromAssessmentsPage() {
   // 3) flatten to rows and filter by risk level
   const rows: Array<
     QuestionAnalysis & {
+      riskRegisterId: string;
       company: string;
       category: string;
       date: string;
@@ -152,6 +154,7 @@ export default function RiskRegisterFromAssessmentsPage() {
     .flatMap((a) =>
       (a.analyses || []).map((q) => ({
         ...q,
+        riskRegisterId: a.riskRegisterId,
         company: a.company,
         category: a.category,
         date: a.date,
@@ -382,6 +385,7 @@ export default function RiskRegisterFromAssessmentsPage() {
             <table className="min-w-full text-xs text-left border-collapse text-slate-100">
               <thead>
                 <tr className="border-b border-slate-700">
+                  <th className="py-2 pr-3">Risk ID</th>
                   <th className="py-2 pr-3">Company</th>
                   <th className="py-2 pr-3">Category</th>
                   <th className="py-2 pr-3">Date</th>
@@ -413,6 +417,7 @@ export default function RiskRegisterFromAssessmentsPage() {
                       key={`${r.analysisId}-${r.questionId}-${idx}`}
                       className="border-b border-slate-700 last:border-b-0"
                     >
+                      <td className="py-2 pr-3 font-mono text-emerald-400">{r.riskRegisterId}</td>
                       <td className="py-2 pr-3">{r.company}</td>
                       <td className="py-2 pr-3">{r.category}</td>
                       <td className="py-2 pr-3">
@@ -436,9 +441,9 @@ export default function RiskRegisterFromAssessmentsPage() {
                               setEditing((prev) =>
                                 prev
                                   ? {
-                                      ...prev,
-                                      likelihood: e.target.value,
-                                    }
+                                    ...prev,
+                                    likelihood: e.target.value,
+                                  }
                                   : prev
                               )
                             }
@@ -461,9 +466,9 @@ export default function RiskRegisterFromAssessmentsPage() {
                               setEditing((prev) =>
                                 prev
                                   ? {
-                                      ...prev,
-                                      impact: e.target.value,
-                                    }
+                                    ...prev,
+                                    impact: e.target.value,
+                                  }
                                   : prev
                               )
                             }
@@ -528,9 +533,9 @@ export default function RiskRegisterFromAssessmentsPage() {
                               setEditing((prev) =>
                                 prev
                                   ? {
-                                      ...prev,
-                                      mitigation: e.target.value,
-                                    }
+                                    ...prev,
+                                    mitigation: e.target.value,
+                                  }
                                   : prev
                               )
                             }
@@ -551,9 +556,9 @@ export default function RiskRegisterFromAssessmentsPage() {
                               setEditing((prev) =>
                                 prev
                                   ? {
-                                      ...prev,
-                                      impactLabel: e.target.value,
-                                    }
+                                    ...prev,
+                                    impactLabel: e.target.value,
+                                  }
                                   : prev
                               )
                             }
@@ -574,9 +579,9 @@ export default function RiskRegisterFromAssessmentsPage() {
                               setEditing((prev) =>
                                 prev
                                   ? {
-                                      ...prev,
-                                      impactDescription: e.target.value,
-                                    }
+                                    ...prev,
+                                    impactDescription: e.target.value,
+                                  }
                                   : prev
                               )
                             }
