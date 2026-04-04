@@ -5,7 +5,7 @@ import RiskAnalysis from "@/models/RiskAnalysis";
 
 export async function GET() {
     try {
-         await dbConnect();
+        await dbConnect();
 
         const analyses = await RiskAnalysis.find({})
             .sort({ createdAt: -1 })
@@ -33,6 +33,7 @@ export async function GET() {
 
             return {
                 _id: analysis._id.toString(),
+                riskRegisterId: analysis.riskRegisterId || 'N/A',
                 company: analysis.company,
                 category: analysis.category,
                 date: analysis.createdAt,
