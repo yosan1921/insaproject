@@ -25,10 +25,11 @@ const RiskMatrix: React.FC<RiskMatrixProps> = ({ data }) => {
 
   const getColor = (likelihood: number, impact: number): string => {
     const score = likelihood * impact;
-    if (score >= 20) return 'bg-red-600';
-    if (score >= 12) return 'bg-orange-500';
-    if (score >= 6) return 'bg-yellow-500';
-    return 'bg-green-500';
+    if (score >= 21) return 'bg-red-600';      // CRITICAL: 21-25
+    if (score >= 16) return 'bg-orange-500';   // HIGH: 16-20
+    if (score >= 9) return 'bg-yellow-500';    // MEDIUM: 9-15
+    if (score >= 4) return 'bg-amber-400';     // LOW: 4-8
+    return 'bg-green-500';                     // VERY_LOW: 1-3
   };
 
   const getCellOpacity = (count: number): string => {
@@ -90,19 +91,23 @@ const RiskMatrix: React.FC<RiskMatrixProps> = ({ data }) => {
       <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-red-600 rounded"></div>
-          <span className="text-slate-400">Critical (20-25)</span>
+          <span className="text-slate-400">Critical (21-25)</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-orange-500 rounded"></div>
-          <span className="text-slate-400">High (12-19)</span>
+          <span className="text-slate-400">High (16-20)</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-          <span className="text-slate-400">Medium (6-11)</span>
+          <span className="text-slate-400">Medium (9-15)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-amber-400 rounded"></div>
+          <span className="text-slate-400">Low (4-8)</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-green-500 rounded"></div>
-          <span className="text-slate-400">Low (1-5)</span>
+          <span className="text-slate-400">Very Low (1-3)</span>
         </div>
       </div>
 

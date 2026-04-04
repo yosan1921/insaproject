@@ -23,15 +23,21 @@ export interface UpdateQuestionAnalysisInput {
 function computeRiskScoreAndLevel(likelihood: number, impact: number) {
   const riskScore = (likelihood || 0) * (impact || 0);
 
-  let riskLevel = "LOW";
-  let riskColor = "green";
+  let riskLevel = "VERY_LOW";
+  let riskColor = "#10b981"; // green
 
-  if (riskScore >= 15) {
+  if (riskScore >= 21) {
+    riskLevel = "CRITICAL";
+    riskColor = "#dc2626"; // red
+  } else if (riskScore >= 16) {
     riskLevel = "HIGH";
-    riskColor = "red";
-  } else if (riskScore >= 6) {
+    riskColor = "#ef4444"; // orange-red
+  } else if (riskScore >= 9) {
     riskLevel = "MEDIUM";
-    riskColor = "yellow";
+    riskColor = "#f97316"; // orange
+  } else if (riskScore >= 4) {
+    riskLevel = "LOW";
+    riskColor = "#f59e0b"; // amber
   }
 
   return { riskScore, riskLevel, riskColor };
