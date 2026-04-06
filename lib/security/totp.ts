@@ -69,7 +69,7 @@ export function generateTotpCode(secret: string): string {
   return computeHotp(secret, counter);
 }
 
-export function verifyTotpCode(secret: string, token: string, window = 1): boolean {
+export function verifyTotpCode(secret: string, token: string, window = 2): boolean {
   const counter = Math.floor(Date.now() / 1000 / 30);
   for (let i = -window; i <= window; i++) {
     if (computeHotp(secret, counter + i) === token) return true;

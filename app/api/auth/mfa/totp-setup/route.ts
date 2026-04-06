@@ -24,14 +24,24 @@ export async function POST(req: NextRequest) {
 
   const userId = (session.user as any).id;
 
-  // Always generate fresh secret so Authy stays in sync
-  const finalSecret = generateTotpSecret();
-  const encryptedSecret = encrypt(finalSecret);
-  await MfaSettings.findOneAndUpdate(
-    { userId },
-    { $set: { encryptedSecret } },
-    { upsert: true, new: true }
-  );
+  // Only generate new secret if user doesn't have one yet
+  const existing = await MfaSettings.findOne({ userId });
+  let finalSecret: string;
+
+  if (existing) {
+    // Return existing secret so Authy stays in sync
+    const { decrypt } = await import('@/lib/security/encryption');
+    finalSecret = decrypt(existing.encryptedSecret);
+  } else {
+    // First time - generate new secret
+    finalSecret = generateTotpSecret();
+    const encryptedSecret = encrypt(finalSecret);
+    await MfaSettings.findOneAndUpdate(
+      { userId },
+      { $set: { encryptedSecret } },
+      { upsert: true, new: true }
+    );
+  }
 
   const email = session.user.email || "";
   const otpauthUrl = getOtpauthUrl({

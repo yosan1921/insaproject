@@ -40,12 +40,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { name: "Risk Analysis", href: "/risk-analysis" },
     { name: "Risk Evaluation", href: "/risk-evaluation" },
     { name: "Risk Treatment", href: "/risk-treatment" },
+    { name: "Risk Treatment Options", href: "/risk-treatment-options" },
     { name: "Risk Matrix", href: "/risk-matrix" },
     { name: "Report & Documentation", href: "/reports" },
     { name: "Certificates", href: "/certificates" },
     { name: "Risk Register", href: "/risks" },
     { name: "Asset Inventory", href: "/assets" },
     { name: "Threat Intelligence", href: "/threats" },
+    { name: "Trend Analysis", href: "/trends" },
+    { name: "ALE Analysis", href: "/ale-analysis" },
+    { name: "Performance", href: "/performance" },
+    { name: "Feedback", href: "/feedback" },
     { name: "Profile", href: "/profile" },
   ];
 
