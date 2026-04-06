@@ -57,14 +57,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100">
 
-      <div className="flex">
-        <aside className="w-64 bg-slate-800 border-r border-slate-700 h-screen sticky top-0 flex flex-col">
-          <div className="p-4 border-b border-slate-700 flex items-center justify-center">
+      <div className="flex h-screen">
+        <aside className="w-64 bg-slate-800 border-r border-slate-700 flex flex-col">
+          {/* Logo - Fixed at top */}
+          <div className="p-4 border-b border-slate-700 flex items-center justify-center flex-shrink-0">
             <div className="w-full flex items-center justify-center">
               <Image src="/logo2.png" alt="CSRARS Logo" width={180} height={60} className="object-contain" priority />
             </div>
           </div>
-          <nav className="p-4 flex-1">
+
+          {/* Navigation - Scrollable */}
+          <nav className="flex-1 overflow-y-auto p-4">
             <ul className="space-y-2">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
@@ -85,8 +88,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </ul>
           </nav>
 
-          {/* Bottom area: Notifications & Sign Out */}
-          <div className="p-4 border-t border-slate-700 space-y-2 relative">
+          {/* Bottom area: Notifications & Sign Out - Fixed at bottom */}
+          <div className="p-4 border-t border-slate-700 space-y-2 relative flex-shrink-0">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
               className="w-full px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-md transition flex items-center justify-center gap-2 relative"
@@ -119,8 +122,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 p-8">{children}</main>
+        {/* Main Content - Scrollable */}
+        <main className="flex-1 overflow-y-auto p-8">{children}</main>
       </div>
       <CriticalRiskToast />
     </div>
