@@ -8,6 +8,7 @@ export interface IUser extends Document {
   role: UserRole;
   name?: string;
   tenantId?: string;
+  lastActive?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

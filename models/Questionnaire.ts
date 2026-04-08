@@ -17,6 +17,7 @@ export interface IQuestionnaire extends Document {
   externalId: string;
   title: string;
   company: string;
+  sector?: string; // OPTIONAL - NEW: Sector for national benchmarking
   filledBy: string;
   role: string;
   filledDate: Date;
@@ -47,6 +48,24 @@ const QuestionnaireSchema = new Schema<IQuestionnaire>(
     externalId: { type: String, required: true, unique: true },
     title: { type: String, required: true },
     company: { type: String, required: true },
+    sector: {
+      type: String,
+      enum: [
+        'Banking & Finance',
+        'Healthcare',
+        'Government',
+        'Education',
+        'Telecommunications',
+        'Manufacturing',
+        'Energy & Utilities',
+        'Transportation',
+        'Retail & Commerce',
+        'Technology & IT',
+        'Other'
+      ],
+      default: 'Other'
+      // NOT required - backward compatible with existing data
+    },
     filledBy: { type: String, required: true },
     role: { type: String, required: true },
     filledDate: { type: Date, required: true },
