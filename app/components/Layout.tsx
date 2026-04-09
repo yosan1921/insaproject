@@ -76,6 +76,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         { name: "Treatment Options", href: "/risk-treatment-options" },
         { name: "Risk Matrix", href: "/risk-matrix" },
         { name: "Risk Register", href: "/risks" },
+        { name: "Assignments", href: "/assignments" },
       ]
     },
     {

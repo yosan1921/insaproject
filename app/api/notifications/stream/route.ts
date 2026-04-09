@@ -2,29 +2,29 @@ import { NextResponse } from 'next/server';
 import { subscribe, unsubscribe } from '@/lib/sseHub';
 
 export async function GET() {
+  // clientId must be in outer scope so cancel() can access it
+  const clientIdRef = { id: '' };
+
   const stream = new ReadableStream({
     start(controller) {
-      const id = subscribe(controller);
-      // send a comment to establish the connection
+      clientIdRef.id = subscribe(controller);
+      // Send initial connection confirmation
       controller.enqueue(`: connected\n\n`);
-
-      // keep the stream alive until the client closes
-      // store id on controller for cleanup
-      // @ts-ignore
-      controller._sseId = id;
     },
     cancel() {
-      // nothing to do here; unsubscribe handled below by closed promise
+      // Called when client disconnects - clean up properly
+      if (clientIdRef.id) {
+        unsubscribe(clientIdRef.id);
+      }
     }
   });
 
-  const response = new NextResponse(stream, {
+  return new NextResponse(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive'
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no', // Disable nginx buffering
     }
   });
-
-  return response;
 }

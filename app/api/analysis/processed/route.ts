@@ -1,13 +1,39 @@
 // eslint-disable-line @typescript-eslint/no-explicit-any
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import dbConnect from "@/lib/mongodb";
 import RiskAnalysis from "@/models/RiskAnalysis";
 
 export async function GET() {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session || !session.user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         await dbConnect();
 
-        const analyses = await RiskAnalysis.find({})
+        const role = (session.user as any).role;
+        const userId = (session.user as any).id;
+
+        let filter: any = {};
+
+        // Staff and Risk Analyst: only see assigned analyses
+        if (role === 'Staff' || role === 'Risk Analyst') {
+            const { default: Assignment } = await import('@/models/Assignment');
+            const mongoose = await import('mongoose');
+            const userObjectId = new mongoose.Types.ObjectId(userId);
+            const assignments = await Assignment.find({ assignedTo: userObjectId }).select('analysisId').lean();
+            const assignedIds = assignments.map((a: any) => a.analysisId);
+            if (assignedIds.length === 0) {
+                return NextResponse.json({ success: true, assessments: [] });
+            }
+            filter = { _id: { $in: assignedIds } };
+        }
+        // Director and Division Head see all analyses
+
+        const analyses = await RiskAnalysis.find(filter)
             .sort({ createdAt: -1 })
             .lean();
 
