@@ -3,6 +3,29 @@ import { sendMail } from "@/lib/mail/mailer";
 import { criticalRiskAlertEmail } from "@/lib/mail/templates/criticalRiskAlert";
 
 const createQuestionResult = (question: any, analysis: any) => {
+    // Auto-generate risk name from threat or question
+    let riskName = '';
+    if (analysis.threat) {
+        // Extract key risk name from threat description
+        // Examples: "Unauthorized Access Risk" -> "Unauthorized Access"
+        //           "Risk of SQL Injection attacks" -> "SQL Injection"
+        riskName = analysis.threat
+            .replace(/\b(risk|threat|vulnerability|attack|issue|problem)\b/gi, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toUpperCase();
+
+        // Limit to first 50 characters for readability
+        if (riskName.length > 50) {
+            riskName = riskName.substring(0, 50).trim();
+        }
+    }
+
+    // Fallback: use question section or generic name
+    if (!riskName) {
+        riskName = question.section ? question.section.toUpperCase() : `RISK-${question.id}`;
+    }
+
     return {
         questionId: question.id,
         section: question.section,
@@ -10,6 +33,7 @@ const createQuestionResult = (question: any, analysis: any) => {
         answer: question.answer,
         level: question.level,
         analysis: {
+            riskName: riskName,
             likelihood: analysis.likelihood,
             impact: analysis.impact,
             riskScore: analysis.riskScore,
@@ -156,11 +180,31 @@ export const performRiskAnalysis = async (questionnaireData: any[], apiKey: stri
                     'Catastrophic consequences for the organization'
                 ];
 
+                // Generate threat based on question keywords
+                let threat = 'Security Risk';
+                if (qtext.match(/malware|virus|trojan/)) threat = 'Malware Infection';
+                else if (qtext.match(/sql|injection|database/)) threat = 'SQL Injection Attack';
+                else if (qtext.match(/ddos|denial|service/)) threat = 'DDoS Attack';
+                else if (qtext.match(/breach|data leak|exposure/)) threat = 'Data Breach';
+                else if (qtext.match(/ransomware|encryption/)) threat = 'Ransomware Attack';
+                else if (qtext.match(/phishing|social engineering/)) threat = 'Phishing Attack';
+                else if (qtext.match(/access|authentication|password/)) threat = 'Unauthorized Access';
+                else if (qtext.match(/policy|procedure|governance/)) threat = 'Governance and Compliance Risk';
+                else if (qtext.match(/incident|response|plan/)) threat = 'Inadequate Incident Response';
+                else if (qtext.match(/budget|resource|funding/)) threat = 'Insufficient Security Resources';
+                else if (qtext.match(/training|awareness|education/)) threat = 'Inadequate Security Awareness';
+                else if (qtext.match(/encryption|crypto/)) threat = 'Weak Encryption';
+                else if (qtext.match(/backup|recovery|disaster/)) threat = 'Inadequate Backup and Recovery';
+                else if (qtext.match(/patch|update|vulnerability/)) threat = 'Unpatched Vulnerabilities';
+                else if (qtext.match(/firewall|network|perimeter/)) threat = 'Network Security Gap';
+                else if (qtext.match(/mfa|multi.factor|2fa/)) threat = 'Weak Access Controls';
+                else if (question.section) threat = question.section + ' Risk';
+
                 analysis = {
                     likelihood,
                     impact,
                     gap: 'Manual review suggested',
-                    threat: 'Not assessed (no API)',
+                    threat: threat,
                     mitigation: 'Review controls',
                     riskScore: score,
                     riskLevel,

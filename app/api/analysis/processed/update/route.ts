@@ -17,6 +17,20 @@ export async function PATCH(request: Request) {
       impactLabel,
       likelihoodLabel,
       impactDescription,
+      // New fields
+      riskName,
+      description,
+      status,
+      riskType,
+      threatOpportunity,
+      assignedTo,
+      preMitigationProbability,
+      preMitigationImpact,
+      preMitigationCost,
+      postMitigationProbability,
+      postMitigationImpact,
+      postMitigationCost,
+      mitigationCost,
     } = body;
 
     if (!analysisId || !level || typeof questionId !== "number") {
@@ -38,6 +52,20 @@ export async function PATCH(request: Request) {
       impactLabel,
       likelihoodLabel,
       impactDescription,
+      // New fields
+      riskName,
+      description,
+      status,
+      riskType,
+      threatOpportunity,
+      assignedTo,
+      preMitigationProbability,
+      preMitigationImpact,
+      preMitigationCost,
+      postMitigationProbability,
+      postMitigationImpact,
+      postMitigationCost,
+      mitigationCost,
     });
 
     if (!updated) {
@@ -79,10 +107,35 @@ export async function PATCH(request: Request) {
         level: a.level,
         question: a.question,
         answer: a.answer,
+
+        // New fields
+        riskName: a.analysis?.riskName || '',
+        description: a.analysis?.description || '',
+        status: a.analysis?.status || 'Open',
+        riskType: a.analysis?.riskType || 'Risk',
+        threatOpportunity: a.analysis?.threatOpportunity || 'Threat',
+        assignedTo: a.analysis?.assignedTo || '',
+
+        // Pre-Mitigation
+        preMitigationProbability: a.analysis?.preMitigation?.probability || 0,
+        preMitigationImpact: a.analysis?.preMitigation?.impact || 0,
+        preMitigationScore: a.analysis?.preMitigation?.score || 0,
+        preMitigationCost: a.analysis?.preMitigation?.cost || 0,
+
+        // Current values
         likelihood: a.analysis?.likelihood || 0,
         impact: a.analysis?.impact || 0,
         riskScore: a.analysis?.riskScore || 0,
         riskLevel: a.analysis?.riskLevel || "UNKNOWN",
+
+        // Post-Mitigation
+        postMitigationProbability: a.analysis?.postMitigation?.probability || 0,
+        postMitigationImpact: a.analysis?.postMitigation?.impact || 0,
+        postMitigationScore: a.analysis?.postMitigation?.score || 0,
+        postMitigationCost: a.analysis?.postMitigation?.cost || 0,
+
+        // Mitigation details
+        mitigationCost: a.analysis?.mitigationCost || 0,
         gap: a.analysis?.gap || "",
         threat: a.analysis?.threat || "",
         mitigation: a.analysis?.mitigation || "",

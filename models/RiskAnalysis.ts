@@ -7,14 +7,44 @@ export interface IQuestionAnalysis {
   answer: string;
   level: string;
   analysis: {
+    // Basic fields
+    riskName?: string;
+    description?: string;
+    status?: 'Open' | 'Closed';
+    riskType?: 'Risk' | 'Issue';
+    threatOpportunity?: 'Threat' | 'Opportunity';
+    assignedTo?: string;
+
+    // Pre-Mitigation
+    preMitigation?: {
+      probability: number; // percentage (0-100)
+      impact: number; // percentage (0-100)
+      score: number; // calculated
+      cost: number; // financial cost
+    };
+
+    // Current/Post-Mitigation
     likelihood: number;
     impact: number;
     riskScore: number;
     riskLevel: string;
     riskColor: string;
+
+    // Post-Mitigation (percentage based)
+    postMitigation?: {
+      probability: number; // percentage (0-100)
+      impact: number; // percentage (0-100)
+      score: number; // calculated
+      cost: number; // financial cost
+    };
+
+    // Mitigation details
+    mitigationCost?: number;
     gap: string;
     threat: string;
     mitigation: string;
+
+    // Additional fields
     impactLabel?: string;
     likelihoodLabel?: string;
     impactDescription?: string;
@@ -57,14 +87,44 @@ const QuestionAnalysisSchema = new Schema({
   answer: String,
   level: String,
   analysis: {
+    // Basic fields
+    riskName: String,
+    description: String,
+    status: { type: String, enum: ['Open', 'Closed'], default: 'Open' },
+    riskType: { type: String, enum: ['Risk', 'Issue'], default: 'Risk' },
+    threatOpportunity: { type: String, enum: ['Threat', 'Opportunity'], default: 'Threat' },
+    assignedTo: String,
+
+    // Pre-Mitigation
+    preMitigation: {
+      probability: Number, // percentage (0-100)
+      impact: Number, // percentage (0-100)
+      score: Number, // calculated
+      cost: Number // financial cost
+    },
+
+    // Current/Post-Mitigation
     likelihood: Number,
     impact: Number,
     riskScore: Number,
     riskLevel: String,
     riskColor: String,
+
+    // Post-Mitigation (percentage based)
+    postMitigation: {
+      probability: Number, // percentage (0-100)
+      impact: Number, // percentage (0-100)
+      score: Number, // calculated
+      cost: Number // financial cost
+    },
+
+    // Mitigation details
+    mitigationCost: Number,
     gap: String,
     threat: String,
     mitigation: String,
+
+    // Additional fields
     impactLabel: String,
     likelihoodLabel: String,
     impactDescription: String

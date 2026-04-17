@@ -17,6 +17,27 @@ export interface UpdateQuestionAnalysisInput {
   impactLabel?: string;
   likelihoodLabel?: string;
   impactDescription?: string;
+
+  // New fields
+  riskName?: string;
+  description?: string;
+  status?: 'Open' | 'Closed';
+  riskType?: 'Risk' | 'Issue';
+  threatOpportunity?: 'Threat' | 'Opportunity';
+  assignedTo?: string;
+
+  // Pre-Mitigation
+  preMitigationProbability?: number;
+  preMitigationImpact?: number;
+  preMitigationCost?: number;
+
+  // Post-Mitigation
+  postMitigationProbability?: number;
+  postMitigationImpact?: number;
+  postMitigationCost?: number;
+
+  // Mitigation cost
+  mitigationCost?: number;
 }
 
 
@@ -105,6 +126,65 @@ export class AnalysisService {
     }
     if (typeof input.impactDescription === "string") {
       item.analysis.impactDescription = input.impactDescription;
+    }
+
+    // New fields
+    if (typeof input.riskName === "string") {
+      item.analysis.riskName = input.riskName;
+    }
+    if (typeof input.description === "string") {
+      item.analysis.description = input.description;
+    }
+    if (input.status) {
+      item.analysis.status = input.status;
+    }
+    if (input.riskType) {
+      item.analysis.riskType = input.riskType;
+    }
+    if (input.threatOpportunity) {
+      item.analysis.threatOpportunity = input.threatOpportunity;
+    }
+    if (typeof input.assignedTo === "string") {
+      item.analysis.assignedTo = input.assignedTo;
+    }
+
+    // Pre-Mitigation
+    if (!item.analysis.preMitigation) {
+      item.analysis.preMitigation = { probability: 0, impact: 0, score: 0, cost: 0 };
+    }
+    if (typeof input.preMitigationProbability === "number") {
+      item.analysis.preMitigation.probability = input.preMitigationProbability;
+    }
+    if (typeof input.preMitigationImpact === "number") {
+      item.analysis.preMitigation.impact = input.preMitigationImpact;
+    }
+    if (typeof input.preMitigationCost === "number") {
+      item.analysis.preMitigation.cost = input.preMitigationCost;
+    }
+    // Calculate pre-mitigation score
+    item.analysis.preMitigation.score =
+      (item.analysis.preMitigation.probability / 100) * (item.analysis.preMitigation.impact / 100) * 100;
+
+    // Post-Mitigation
+    if (!item.analysis.postMitigation) {
+      item.analysis.postMitigation = { probability: 0, impact: 0, score: 0, cost: 0 };
+    }
+    if (typeof input.postMitigationProbability === "number") {
+      item.analysis.postMitigation.probability = input.postMitigationProbability;
+    }
+    if (typeof input.postMitigationImpact === "number") {
+      item.analysis.postMitigation.impact = input.postMitigationImpact;
+    }
+    if (typeof input.postMitigationCost === "number") {
+      item.analysis.postMitigation.cost = input.postMitigationCost;
+    }
+    // Calculate post-mitigation score
+    item.analysis.postMitigation.score =
+      (item.analysis.postMitigation.probability / 100) * (item.analysis.postMitigation.impact / 100) * 100;
+
+    // Mitigation cost
+    if (typeof input.mitigationCost === "number") {
+      item.analysis.mitigationCost = input.mitigationCost;
     }
 
     // Recompute derived fields if likelihood/impact changed

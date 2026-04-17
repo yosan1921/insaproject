@@ -6,14 +6,39 @@ import { useRouter } from "next/navigation";
 import Layout from "../components/Layout";
 
 interface QuestionAnalysis {
-  questionId: string; // backend is number, but comes as string here
+  questionId: string;
   level: string;
   question: string;
   answer: string;
+
+  // New fields
+  riskName: string;
+  description: string;
+  status: 'Open' | 'Closed';
+  riskType: 'Risk' | 'Issue';
+  threatOpportunity: 'Threat' | 'Opportunity';
+  assignedTo: string;
+
+  // Pre-Mitigation
+  preMitigationProbability: number;
+  preMitigationImpact: number;
+  preMitigationScore: number;
+  preMitigationCost: number;
+
+  // Current values
   likelihood: number;
   impact: number;
   riskScore: number;
   riskLevel: string;
+
+  // Post-Mitigation
+  postMitigationProbability: number;
+  postMitigationImpact: number;
+  postMitigationScore: number;
+  postMitigationCost: number;
+
+  // Mitigation details
+  mitigationCost: number;
   gap: string;
   threat: string;
   mitigation: string;
@@ -36,8 +61,31 @@ interface EditingState {
   analysisId: string;
   questionId: string;
   level: string;
+
+  // New fields
+  riskName: string;
+  description: string;
+  status: 'Open' | 'Closed';
+  riskType: 'Risk' | 'Issue';
+  threatOpportunity: 'Threat' | 'Opportunity';
+  assignedTo: string;
+
+  // Pre-Mitigation
+  preMitigationProbability: string;
+  preMitigationImpact: string;
+  preMitigationCost: string;
+
+  // Current values
   likelihood: string;
   impact: string;
+
+  // Post-Mitigation
+  postMitigationProbability: string;
+  postMitigationImpact: string;
+  postMitigationCost: string;
+
+  // Mitigation details
+  mitigationCost: string;
   gap: string;
   threat: string;
   mitigation: string;
@@ -55,6 +103,7 @@ export default function RiskRegisterFromAssessmentsPage() {
   const [companyFilter, setCompanyFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [riskLevelFilter, setRiskLevelFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const [availableCompanies, setAvailableCompanies] = useState<string[]>([]);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
@@ -162,16 +211,34 @@ export default function RiskRegisterFromAssessmentsPage() {
       }))
     )
     .filter((q) => {
-      if (!riskLevelFilter) return true;
-      return (q.riskLevel || "").toLowerCase() === riskLevelFilter.toLowerCase();
+      if (riskLevelFilter && (q.riskLevel || "").toLowerCase() !== riskLevelFilter.toLowerCase()) {
+        return false;
+      }
+      if (statusFilter && (q.status || "").toLowerCase() !== statusFilter.toLowerCase()) {
+        return false;
+      }
+      return true;
     });
 
   const startEditing = (row: {
     analysisId: string;
     questionId: string;
     level: string;
+    riskName: string;
+    description: string;
+    status: 'Open' | 'Closed';
+    riskType: 'Risk' | 'Issue';
+    threatOpportunity: 'Threat' | 'Opportunity';
+    assignedTo: string;
+    preMitigationProbability: number;
+    preMitigationImpact: number;
+    preMitigationCost: number;
     likelihood: number;
     impact: number;
+    postMitigationProbability: number;
+    postMitigationImpact: number;
+    postMitigationCost: number;
+    mitigationCost: number;
     gap: string;
     threat: string;
     mitigation: string;
@@ -182,8 +249,21 @@ export default function RiskRegisterFromAssessmentsPage() {
       analysisId: row.analysisId,
       questionId: row.questionId,
       level: row.level,
+      riskName: row.riskName ?? "",
+      description: row.description ?? "",
+      status: row.status ?? "Open",
+      riskType: row.riskType ?? "Risk",
+      threatOpportunity: row.threatOpportunity ?? "Threat",
+      assignedTo: row.assignedTo ?? "",
+      preMitigationProbability: String(row.preMitigationProbability ?? ""),
+      preMitigationImpact: String(row.preMitigationImpact ?? ""),
+      preMitigationCost: String(row.preMitigationCost ?? ""),
       likelihood: String(row.likelihood ?? ""),
       impact: String(row.impact ?? ""),
+      postMitigationProbability: String(row.postMitigationProbability ?? ""),
+      postMitigationImpact: String(row.postMitigationImpact ?? ""),
+      postMitigationCost: String(row.postMitigationCost ?? ""),
+      mitigationCost: String(row.mitigationCost ?? ""),
       gap: row.gap ?? "",
       threat: row.threat ?? "",
       mitigation: row.mitigation ?? "",
@@ -209,14 +289,31 @@ export default function RiskRegisterFromAssessmentsPage() {
           analysisId: editing.analysisId,
           level: editing.level,
           questionId: Number(editing.questionId),
-          likelihood:
-            editing.likelihood.trim() === ""
-              ? undefined
-              : Number(editing.likelihood),
-          impact:
-            editing.impact.trim() === ""
-              ? undefined
-              : Number(editing.impact),
+
+          // New fields
+          riskName: editing.riskName,
+          description: editing.description,
+          status: editing.status,
+          riskType: editing.riskType,
+          threatOpportunity: editing.threatOpportunity,
+          assignedTo: editing.assignedTo,
+
+          // Pre-Mitigation
+          preMitigationProbability: editing.preMitigationProbability.trim() === "" ? undefined : Number(editing.preMitigationProbability),
+          preMitigationImpact: editing.preMitigationImpact.trim() === "" ? undefined : Number(editing.preMitigationImpact),
+          preMitigationCost: editing.preMitigationCost.trim() === "" ? undefined : Number(editing.preMitigationCost),
+
+          // Current values
+          likelihood: editing.likelihood.trim() === "" ? undefined : Number(editing.likelihood),
+          impact: editing.impact.trim() === "" ? undefined : Number(editing.impact),
+
+          // Post-Mitigation
+          postMitigationProbability: editing.postMitigationProbability.trim() === "" ? undefined : Number(editing.postMitigationProbability),
+          postMitigationImpact: editing.postMitigationImpact.trim() === "" ? undefined : Number(editing.postMitigationImpact),
+          postMitigationCost: editing.postMitigationCost.trim() === "" ? undefined : Number(editing.postMitigationCost),
+
+          // Mitigation details
+          mitigationCost: editing.mitigationCost.trim() === "" ? undefined : Number(editing.mitigationCost),
           gap: editing.gap,
           threat: editing.threat,
           mitigation: editing.mitigation,
@@ -270,7 +367,7 @@ export default function RiskRegisterFromAssessmentsPage() {
 
         {/* Filters */}
         <div className="bg-slate-800 rounded-lg border border-slate-700 p-4 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Company */}
             <div>
               <label className="block text-xs text-slate-400 mb-1">
@@ -324,6 +421,22 @@ export default function RiskRegisterFromAssessmentsPage() {
                 <option value="high">High</option>
                 <option value="medium">Medium</option>
                 <option value="low">Low</option>
+              </select>
+            </div>
+
+            {/* Status */}
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">
+                Status
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded text-white text-sm"
+              >
+                <option value="">All</option>
+                <option value="open">Open</option>
+                <option value="closed">Closed</option>
               </select>
             </div>
           </div>
@@ -385,23 +498,36 @@ export default function RiskRegisterFromAssessmentsPage() {
             <table className="min-w-full text-xs text-left border-collapse text-slate-100">
               <thead>
                 <tr className="border-b border-slate-700">
+                  <th className="py-2 pr-3">Actions</th>
                   <th className="py-2 pr-3">Risk ID</th>
+                  <th className="py-2 pr-3">Risk Name</th>
+                  <th className="py-2 pr-3">Status</th>
+                  <th className="py-2 pr-3">Risk/Issue</th>
+                  <th className="py-2 pr-3">Threat/Opp</th>
+                  <th className="py-2 pr-3">Assigned To</th>
                   <th className="py-2 pr-3">Company</th>
                   <th className="py-2 pr-3">Category</th>
                   <th className="py-2 pr-3">Date</th>
                   <th className="py-2 pr-3">Level</th>
-                  <th className="py-2 pr-3">Question</th>
-                  <th className="py-2 pr-3">Answer</th>
+                  <th className="py-2 pr-3 bg-orange-900/20">Pre-Prob%</th>
+                  <th className="py-2 pr-3 bg-orange-900/20">Pre-Impact%</th>
+                  <th className="py-2 pr-3 bg-orange-900/20">Pre-Score%</th>
+                  <th className="py-2 pr-3 bg-orange-900/20">Pre-Cost$</th>
                   <th className="py-2 pr-3">Likelihood</th>
                   <th className="py-2 pr-3">Impact</th>
                   <th className="py-2 pr-3">Risk Score</th>
                   <th className="py-2 pr-3">Risk Level</th>
+                  <th className="py-2 pr-3 bg-green-900/20">Post-Prob%</th>
+                  <th className="py-2 pr-3 bg-green-900/20">Post-Impact%</th>
+                  <th className="py-2 pr-3 bg-green-900/20">Post-Score%</th>
+                  <th className="py-2 pr-3 bg-green-900/20">Post-Cost$</th>
+                  <th className="py-2 pr-3">Mitigation Cost$</th>
                   <th className="py-2 pr-3">Gap</th>
                   <th className="py-2 pr-3">Threat</th>
                   <th className="py-2 pr-3">Mitigation</th>
+                  <th className="py-2 pr-3">Description</th>
                   <th className="py-2 pr-3">Impact Label</th>
                   <th className="py-2 pr-3">Impact Description</th>
-                  <th className="py-2 pr-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -417,7 +543,161 @@ export default function RiskRegisterFromAssessmentsPage() {
                       key={`${r.analysisId}-${r.questionId}-${idx}`}
                       className="border-b border-slate-700 last:border-b-0"
                     >
+                      {/* Actions */}
+                      <td className="py-2 pr-3">
+                        {isEditing ? (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={saveEdit}
+                              disabled={saving}
+                              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs"
+                            >
+                              {saving ? "Saving..." : "Save"}
+                            </button>
+                            <button
+                              onClick={cancelEditing}
+                              disabled={saving}
+                              className="px-2 py-1 bg-slate-600 hover:bg-slate-500 text-white rounded text-xs"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() =>
+                              startEditing({
+                                analysisId: r.analysisId,
+                                questionId: r.questionId,
+                                level: r.level,
+                                riskName: r.riskName,
+                                description: r.description,
+                                status: r.status,
+                                riskType: r.riskType,
+                                threatOpportunity: r.threatOpportunity,
+                                assignedTo: r.assignedTo,
+                                preMitigationProbability: r.preMitigationProbability,
+                                preMitigationImpact: r.preMitigationImpact,
+                                preMitigationCost: r.preMitigationCost,
+                                likelihood: r.likelihood,
+                                impact: r.impact,
+                                postMitigationProbability: r.postMitigationProbability,
+                                postMitigationImpact: r.postMitigationImpact,
+                                postMitigationCost: r.postMitigationCost,
+                                mitigationCost: r.mitigationCost,
+                                gap: r.gap,
+                                threat: r.threat,
+                                mitigation: r.mitigation,
+                                impactLabel: r.impactLabel,
+                                impactDescription: r.impactDescription,
+                              })
+                            }
+                            className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs"
+                          >
+                            Edit
+                          </button>
+                        )}
+                      </td>
+
                       <td className="py-2 pr-3 font-mono text-emerald-400">{r.riskRegisterId}</td>
+
+                      {/* Risk Name */}
+                      <td className="py-2 pr-3">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editing.riskName}
+                            onChange={(e) =>
+                              setEditing((prev) =>
+                                prev ? { ...prev, riskName: e.target.value } : prev
+                              )
+                            }
+                            className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                          />
+                        ) : (
+                          r.riskName || '-'
+                        )}
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-2 pr-3">
+                        {isEditing ? (
+                          <select
+                            value={editing.status}
+                            onChange={(e) =>
+                              setEditing((prev) =>
+                                prev ? { ...prev, status: e.target.value as 'Open' | 'Closed' } : prev
+                              )
+                            }
+                            className="w-24 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                          >
+                            <option value="Open">Open</option>
+                            <option value="Closed">Closed</option>
+                          </select>
+                        ) : (
+                          <span className={`px-2 py-0.5 rounded text-xs ${r.status === 'Open' ? 'bg-yellow-600/30 text-yellow-300' : 'bg-green-600/30 text-green-300'}`}>
+                            {r.status || 'Open'}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Risk/Issue */}
+                      <td className="py-2 pr-3">
+                        {isEditing ? (
+                          <select
+                            value={editing.riskType}
+                            onChange={(e) =>
+                              setEditing((prev) =>
+                                prev ? { ...prev, riskType: e.target.value as 'Risk' | 'Issue' } : prev
+                              )
+                            }
+                            className="w-24 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                          >
+                            <option value="Risk">Risk</option>
+                            <option value="Issue">Issue</option>
+                          </select>
+                        ) : (
+                          r.riskType || 'Risk'
+                        )}
+                      </td>
+
+                      {/* Threat/Opportunity */}
+                      <td className="py-2 pr-3">
+                        {isEditing ? (
+                          <select
+                            value={editing.threatOpportunity}
+                            onChange={(e) =>
+                              setEditing((prev) =>
+                                prev ? { ...prev, threatOpportunity: e.target.value as 'Threat' | 'Opportunity' } : prev
+                              )
+                            }
+                            className="w-28 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                          >
+                            <option value="Threat">Threat</option>
+                            <option value="Opportunity">Opportunity</option>
+                          </select>
+                        ) : (
+                          r.threatOpportunity || 'Threat'
+                        )}
+                      </td>
+
+                      {/* Assigned To */}
+                      <td className="py-2 pr-3">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editing.assignedTo}
+                            onChange={(e) =>
+                              setEditing((prev) =>
+                                prev ? { ...prev, assignedTo: e.target.value } : prev
+                              )
+                            }
+                            className="w-32 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                          />
+                        ) : (
+                          r.assignedTo || '-'
+                        )}
+                      </td>
+
                       <td className="py-2 pr-3">{r.company}</td>
                       <td className="py-2 pr-3">{r.category}</td>
                       <td className="py-2 pr-3">
@@ -426,8 +706,71 @@ export default function RiskRegisterFromAssessmentsPage() {
                           : "-"}
                       </td>
                       <td className="py-2 pr-3">{r.level}</td>
-                      <td className="py-2 pr-3">{r.question}</td>
-                      <td className="py-2 pr-3">{r.answer}</td>
+
+                      {/* Pre-Mitigation Probability */}
+                      <td className="py-2 pr-3 bg-orange-900/10">
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={editing.preMitigationProbability}
+                            onChange={(e) =>
+                              setEditing((prev) =>
+                                prev ? { ...prev, preMitigationProbability: e.target.value } : prev
+                              )
+                            }
+                            className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                          />
+                        ) : (
+                          `${r.preMitigationProbability || 0}%`
+                        )}
+                      </td>
+
+                      {/* Pre-Mitigation Impact */}
+                      <td className="py-2 pr-3 bg-orange-900/10">
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={editing.preMitigationImpact}
+                            onChange={(e) =>
+                              setEditing((prev) =>
+                                prev ? { ...prev, preMitigationImpact: e.target.value } : prev
+                              )
+                            }
+                            className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                          />
+                        ) : (
+                          `${r.preMitigationImpact || 0}%`
+                        )}
+                      </td>
+
+                      {/* Pre-Mitigation Score (calculated) */}
+                      <td className="py-2 pr-3 bg-orange-900/10">
+                        {r.preMitigationScore?.toFixed(2) || 0}%
+                      </td>
+
+                      {/* Pre-Mitigation Cost */}
+                      <td className="py-2 pr-3 bg-orange-900/10">
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            value={editing.preMitigationCost}
+                            onChange={(e) =>
+                              setEditing((prev) =>
+                                prev ? { ...prev, preMitigationCost: e.target.value } : prev
+                              )
+                            }
+                            className="w-20 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                          />
+                        ) : (
+                          `$${r.preMitigationCost?.toFixed(2) || 0}`
+                        )}
+                      </td>
 
                       {/* Likelihood */}
                       <td className="py-2 pr-3">
@@ -481,7 +824,100 @@ export default function RiskRegisterFromAssessmentsPage() {
 
                       {/* Risk score / level (readonly, recalculated backend) */}
                       <td className="py-2 pr-3">{r.riskScore}</td>
-                      <td className="py-2 pr-3">{r.riskLevel}</td>
+                      <td className="py-2 pr-3">
+                        <span className={`px-2 py-0.5 rounded text-xs ${r.riskLevel === 'CRITICAL' ? 'bg-red-600/30 text-red-300' :
+                            r.riskLevel === 'HIGH' ? 'bg-orange-600/30 text-orange-300' :
+                              r.riskLevel === 'MEDIUM' ? 'bg-yellow-600/30 text-yellow-300' :
+                                'bg-green-600/30 text-green-300'
+                          }`}>
+                          {r.riskLevel}
+                        </span>
+                      </td>
+
+                      {/* Post-Mitigation Probability */}
+                      <td className="py-2 pr-3 bg-green-900/10">
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={editing.postMitigationProbability}
+                            onChange={(e) =>
+                              setEditing((prev) =>
+                                prev ? { ...prev, postMitigationProbability: e.target.value } : prev
+                              )
+                            }
+                            className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                          />
+                        ) : (
+                          `${r.postMitigationProbability || 0}%`
+                        )}
+                      </td>
+
+                      {/* Post-Mitigation Impact */}
+                      <td className="py-2 pr-3 bg-green-900/10">
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={editing.postMitigationImpact}
+                            onChange={(e) =>
+                              setEditing((prev) =>
+                                prev ? { ...prev, postMitigationImpact: e.target.value } : prev
+                              )
+                            }
+                            className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                          />
+                        ) : (
+                          `${r.postMitigationImpact || 0}%`
+                        )}
+                      </td>
+
+                      {/* Post-Mitigation Score (calculated) */}
+                      <td className="py-2 pr-3 bg-green-900/10">
+                        {r.postMitigationScore?.toFixed(2) || 0}%
+                      </td>
+
+                      {/* Post-Mitigation Cost */}
+                      <td className="py-2 pr-3 bg-green-900/10">
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            value={editing.postMitigationCost}
+                            onChange={(e) =>
+                              setEditing((prev) =>
+                                prev ? { ...prev, postMitigationCost: e.target.value } : prev
+                              )
+                            }
+                            className="w-20 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                          />
+                        ) : (
+                          `$${r.postMitigationCost?.toFixed(2) || 0}`
+                        )}
+                      </td>
+
+                      {/* Mitigation Cost */}
+                      <td className="py-2 pr-3">
+                        {isEditing ? (
+                          <input
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            value={editing.mitigationCost}
+                            onChange={(e) =>
+                              setEditing((prev) =>
+                                prev ? { ...prev, mitigationCost: e.target.value } : prev
+                              )
+                            }
+                            className="w-20 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                          />
+                        ) : (
+                          `$${r.mitigationCost?.toFixed(2) || 0}`
+                        )}
+                      </td>
 
                       {/* Gap */}
                       <td className="py-2 pr-3">
@@ -499,7 +935,7 @@ export default function RiskRegisterFromAssessmentsPage() {
                             className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
                           />
                         ) : (
-                          r.gap
+                          r.gap || '-'
                         )}
                       </td>
 
@@ -519,7 +955,7 @@ export default function RiskRegisterFromAssessmentsPage() {
                             className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
                           />
                         ) : (
-                          r.threat
+                          r.threat || '-'
                         )}
                       </td>
 
@@ -531,18 +967,31 @@ export default function RiskRegisterFromAssessmentsPage() {
                             value={editing.mitigation}
                             onChange={(e) =>
                               setEditing((prev) =>
-                                prev
-                                  ? {
-                                    ...prev,
-                                    mitigation: e.target.value,
-                                  }
-                                  : prev
+                                prev ? { ...prev, mitigation: e.target.value } : prev
                               )
                             }
                             className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
                           />
                         ) : (
-                          r.mitigation
+                          r.mitigation || '-'
+                        )}
+                      </td>
+
+                      {/* Description */}
+                      <td className="py-2 pr-3">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editing.description}
+                            onChange={(e) =>
+                              setEditing((prev) =>
+                                prev ? { ...prev, description: e.target.value } : prev
+                              )
+                            }
+                            className="w-64 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                          />
+                        ) : (
+                          r.description || '-'
                         )}
                       </td>
 
@@ -565,7 +1014,7 @@ export default function RiskRegisterFromAssessmentsPage() {
                             className="w-32 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
                           />
                         ) : (
-                          r.impactLabel
+                          r.impactLabel || '-'
                         )}
                       </td>
 
@@ -588,49 +1037,7 @@ export default function RiskRegisterFromAssessmentsPage() {
                             className="w-64 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
                           />
                         ) : (
-                          r.impactDescription
-                        )}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="py-2 pr-3">
-                        {isEditing ? (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={saveEdit}
-                              disabled={saving}
-                              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs"
-                            >
-                              {saving ? "Saving..." : "Save"}
-                            </button>
-                            <button
-                              onClick={cancelEditing}
-                              disabled={saving}
-                              className="px-2 py-1 bg-slate-600 hover:bg-slate-500 text-white rounded text-xs"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() =>
-                              startEditing({
-                                analysisId: r.analysisId,
-                                questionId: r.questionId,
-                                level: r.level,
-                                likelihood: r.likelihood,
-                                impact: r.impact,
-                                gap: r.gap,
-                                threat: r.threat,
-                                mitigation: r.mitigation,
-                                impactLabel: r.impactLabel,
-                                impactDescription: r.impactDescription,
-                              })
-                            }
-                            className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs"
-                          >
-                            Edit
-                          </button>
+                          r.impactDescription || '-'
                         )}
                       </td>
                     </tr>
