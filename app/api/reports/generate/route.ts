@@ -38,19 +38,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if report already exists for this level
-    const existingReport = await Report.findOne({
-      analysisId: analysis._id,
-      level,
-    });
-
-    if (existingReport) {
-      return NextResponse.json({
-        success: true,
-        report: existingReport,
-        message: "Report already exists",
-      });
-    }
+    // Check if report already exists for this level — delete and regenerate with latest prompt
+    await Report.deleteOne({ analysisId: analysis._id, level });
 
     // Check if OpenAI API key is configured
     if (!process.env.OPENAI_API_KEY) {
@@ -60,14 +49,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Prepare analysis data for report generation
+    // Prepare full analysis data for report generation
     const analysisData = {
-      vulnerabilities: analysis.vulnerabilities,
-      riskScore: analysis.riskScore,
+      company: analysis.company,
       category: analysis.category,
-      inherentRisk: analysis.inherentRisk,
-      residualRisk: analysis.residualRisk,
-      aiInsights: analysis.aiInsights,
+      date: analysis.createdAt,
+      riskRegisterId: analysis.riskRegisterId,
+      operational: analysis.operational || [],
+      tactical: analysis.tactical || [],
+      strategic: analysis.strategic || [],
+      summary: analysis.summary || {},
     };
 
     // Generate report using AI
