@@ -9,6 +9,7 @@ export async function GET() {
         const session = await getServerSession(authOptions);
         if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         const threats = await ThreatIntelligence.find({})
+            .populate('assetId', 'ip hostname os deviceType openPorts')
             .sort({ fetchedAt: -1 })
             .lean();
         return NextResponse.json({ success: true, threats });

@@ -49,9 +49,31 @@ export async function PATCH(req: Request, { params }: { params: { questionnaireI
                 });
 
                 if (scanResult.success && scanResult.assetsFound > 0) {
+                    // Get risk analysis to pass actual risk scores
+                    let overallRiskScore = 0;
+                    try {
+                        const RiskAnalysis = (await import('@/models/RiskAnalysis')).default;
+                        const analysis = await RiskAnalysis.findOne({ questionnaireId: questionnaire._id }).lean();
+                        if (analysis) {
+                            // Calculate average risk score from all questions
+                            const allQuestions = [
+                                ...(analysis.operational || []),
+                                ...(analysis.tactical || []),
+                                ...(analysis.strategic || []),
+                            ];
+                            const scores = allQuestions.map((q: any) => q.analysis?.riskScore || 0);
+                            overallRiskScore = scores.length > 0
+                                ? Math.round(scores.reduce((sum: number, s: number) => sum + s, 0) / scores.length)
+                                : 0;
+                        }
+                    } catch (err) {
+                        console.warn('Could not fetch risk analysis for threat intel:', err);
+                    }
+
                     await fetchAndSaveThreats({
                         questionnaireId: String(questionnaire._id),
                         company: questionnaire.company,
+                        originalRiskScore: overallRiskScore,
                     });
                     // Notify asset scan completion
                     try {

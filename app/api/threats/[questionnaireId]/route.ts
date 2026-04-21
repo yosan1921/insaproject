@@ -10,6 +10,7 @@ export async function GET(_req: NextRequest, { params }: { params: { questionnai
         if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         await dbConnect();
         const threats = await ThreatIntelligence.find({ questionnaireId: params.questionnaireId })
+            .populate('assetId', 'ip hostname os deviceType openPorts')
             .sort({ fetchedAt: -1 })
             .lean();
 

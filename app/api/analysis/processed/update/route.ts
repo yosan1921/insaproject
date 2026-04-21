@@ -40,6 +40,80 @@ export async function PATCH(request: Request) {
       );
     }
 
+    // Validate numeric inputs
+    if (likelihood !== undefined && (likelihood < 1 || likelihood > 5)) {
+      return NextResponse.json(
+        { error: "likelihood must be between 1 and 5" },
+        { status: 400 }
+      );
+    }
+    if (impact !== undefined && (impact < 1 || impact > 5)) {
+      return NextResponse.json(
+        { error: "impact must be between 1 and 5" },
+        { status: 400 }
+      );
+    }
+    if (preMitigationProbability !== undefined && (preMitigationProbability < 0 || preMitigationProbability > 100)) {
+      return NextResponse.json(
+        { error: "preMitigationProbability must be between 0 and 100" },
+        { status: 400 }
+      );
+    }
+    if (preMitigationImpact !== undefined && (preMitigationImpact < 0 || preMitigationImpact > 100)) {
+      return NextResponse.json(
+        { error: "preMitigationImpact must be between 0 and 100" },
+        { status: 400 }
+      );
+    }
+    if (postMitigationProbability !== undefined && (postMitigationProbability < 0 || postMitigationProbability > 100)) {
+      return NextResponse.json(
+        { error: "postMitigationProbability must be between 0 and 100" },
+        { status: 400 }
+      );
+    }
+    if (postMitigationImpact !== undefined && (postMitigationImpact < 0 || postMitigationImpact > 100)) {
+      return NextResponse.json(
+        { error: "postMitigationImpact must be between 0 and 100" },
+        { status: 400 }
+      );
+    }
+    if (preMitigationCost !== undefined && preMitigationCost < 0) {
+      return NextResponse.json(
+        { error: "preMitigationCost must be >= 0" },
+        { status: 400 }
+      );
+    }
+    if (postMitigationCost !== undefined && postMitigationCost < 0) {
+      return NextResponse.json(
+        { error: "postMitigationCost must be >= 0" },
+        { status: 400 }
+      );
+    }
+    if (mitigationCost !== undefined && mitigationCost < 0) {
+      return NextResponse.json(
+        { error: "mitigationCost must be >= 0" },
+        { status: 400 }
+      );
+    }
+    if (status && !['Open', 'Closed'].includes(status)) {
+      return NextResponse.json(
+        { error: "status must be 'Open' or 'Closed'" },
+        { status: 400 }
+      );
+    }
+    if (riskType && !['Risk', 'Issue'].includes(riskType)) {
+      return NextResponse.json(
+        { error: "riskType must be 'Risk' or 'Issue'" },
+        { status: 400 }
+      );
+    }
+    if (threatOpportunity && !['Threat', 'Opportunity'].includes(threatOpportunity)) {
+      return NextResponse.json(
+        { error: "threatOpportunity must be 'Threat' or 'Opportunity'" },
+        { status: 400 }
+      );
+    }
+
     const updated = await AnalysisService.updateQuestionAnalysis({
       analysisId,
       level,
@@ -98,7 +172,7 @@ export async function PATCH(request: Request) {
     );
 
     const formattedAnalysis = {
-      _id: updated._id.toString(),
+      _id: String(updated._id),
       company: updated.company,
       category: updated.category,
       date: updated.createdAt,
@@ -151,7 +225,7 @@ export async function PATCH(request: Request) {
       assessment: formattedAnalysis,
     });
   } catch (error) {
-    console.error("Error updating processed analysis:", error);
+    console.error("❌ Error updating processed analysis:", error);
     const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
       { error: message || "Failed to update analysis" },

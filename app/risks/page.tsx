@@ -281,6 +281,7 @@ export default function RiskRegisterFromAssessmentsPage() {
 
     try {
       setSaving(true);
+      setMessage(null);
 
       const res = await fetch("/api/analysis/processed/update", {
         method: "PATCH",
@@ -326,6 +327,7 @@ export default function RiskRegisterFromAssessmentsPage() {
 
       if (!res.ok || !data.success) {
         console.error("Failed to update assessment", data);
+        setMessage({ type: "error", text: data.error || "Failed to save changes" });
         setSaving(false);
         return;
       }
@@ -338,10 +340,12 @@ export default function RiskRegisterFromAssessmentsPage() {
         )
       );
 
+      setMessage({ type: "success", text: "Changes saved successfully" });
       setSaving(false);
       setEditing(null);
     } catch (error) {
       console.error("Error updating assessment", error);
+      setMessage({ type: "error", text: "Network error - please try again" });
       setSaving(false);
     }
   };
