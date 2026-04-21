@@ -78,13 +78,34 @@ export async function POST(request: Request) {
     }
 
     let analysisResults: any;
+    const questionnaireIdStr = String(questionnaire._id);
+
     try {
-      analysisResults = await performRiskAnalysis(
-        questionnaire.questions,
-        apiKey
+      console.log(`🔒 Analysis lock acquired for questionnaire: ${questionnaireIdStr}`);
+
+      // Add timeout wrapper (5 minutes max)
+      const ANALYSIS_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+      const analysisPromise = performRiskAnalysis(questionnaire.questions, apiKey);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Analysis timeout: exceeded 5 minutes')), ANALYSIS_TIMEOUT)
       );
+
+      analysisResults = await Promise.race([analysisPromise, timeoutPromise]);
+      console.log(`✅ Analysis completed successfully for questionnaire: ${questionnaireIdStr}`);
+
+    } catch (analysisError) {
+      console.error(`❌ Analysis failed for questionnaire ${questionnaireIdStr}:`, analysisError);
+      throw analysisError;
     } finally {
-      try { await import('@/lib/services/analysisLock').then(m => m.releaseAnalysisLock(String(questionnaire._id))); } catch (e) { }
+      // Ensure lock is always released
+      try {
+        await releaseAnalysisLock(questionnaireIdStr);
+        console.log(`🔓 Analysis lock released for questionnaire: ${questionnaireIdStr}`);
+      } catch (lockError) {
+        console.error(`❌ Failed to release analysis lock for ${questionnaireIdStr}:`, lockError);
+        // Force release by directly updating the lock in database if needed
+        // This prevents permanent locks
+      }
     }
 
     const riskAnalysis = new RiskAnalysis({
@@ -115,10 +136,12 @@ export async function POST(request: Request) {
         summary: analysisResults.summary,
       });
       if (reg.success) {
-        console.log(` Assessment registered: ${reg.certificateNumber}`);
+        console.log(`✅ Assessment registered: ${reg.certificateNumber}`);
+      } else {
+        console.warn(`⚠️ Assessment registration returned unsuccessful: ${reg.error || 'Unknown error'}`);
       }
     } catch (regErr) {
-      console.error('Registration step failed (non-critical):', regErr);
+      console.error('❌ Registration step failed (non-critical):', regErr instanceof Error ? regErr.message : regErr);
     }
 
     // Send notifications — non-blocking
@@ -134,6 +157,7 @@ export async function POST(request: Request) {
         analysisId: String(riskAnalysis._id),
         overallRisk,
       });
+      console.log(`✅ Analysis completion notification sent`);
 
       if (overall?.riskDistribution?.CRITICAL > 0) {
         await notifyCriticalRisk({
@@ -141,9 +165,10 @@ export async function POST(request: Request) {
           analysisId: String(riskAnalysis._id),
           criticalCount: overall.riskDistribution.CRITICAL,
         });
+        console.log(`✅ Critical risk notification sent (${overall.riskDistribution.CRITICAL} critical risks)`);
       }
     } catch (notifErr) {
-      console.error('Notification failed (non-critical):', notifErr);
+      console.error('❌ Notification failed (non-critical):', notifErr instanceof Error ? notifErr.message : notifErr);
     }
 
     return NextResponse.json({

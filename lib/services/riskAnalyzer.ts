@@ -3,6 +3,15 @@ import { sendMail } from "@/lib/mail/mailer";
 import { criticalRiskAlertEmail } from "@/lib/mail/templates/criticalRiskAlert";
 
 const createQuestionResult = (question: any, analysis: any) => {
+    // Validate analysis data
+    const likelihood = Math.min(5, Math.max(1, analysis.likelihood || 3));
+    const impact = Math.min(5, Math.max(1, analysis.impact || 3));
+    const riskScore = Math.min(25, Math.max(1, analysis.riskScore || likelihood * impact));
+
+    // Validate risk level
+    const validRiskLevels = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'VERY_LOW'];
+    const riskLevel = validRiskLevels.includes(analysis.riskLevel) ? analysis.riskLevel : 'MEDIUM';
+
     // Auto-generate risk name from threat or question
     let riskName = '';
     if (analysis.threat) {
@@ -34,14 +43,14 @@ const createQuestionResult = (question: any, analysis: any) => {
         level: question.level,
         analysis: {
             riskName: riskName,
-            likelihood: analysis.likelihood,
-            impact: analysis.impact,
-            riskScore: analysis.riskScore,
-            riskLevel: analysis.riskLevel,
+            likelihood: likelihood,
+            impact: impact,
+            riskScore: riskScore,
+            riskLevel: riskLevel,
             riskColor: analysis.riskColor,
-            gap: analysis.gap,
-            threat: analysis.threat,
-            mitigation: analysis.mitigation,
+            gap: analysis.gap || '',
+            threat: analysis.threat || '',
+            mitigation: analysis.mitigation || '',
             impactLabel: analysis.impactLabel,
             likelihoodLabel: analysis.likelihoodLabel,
             impactDescription: analysis.impactDescription
@@ -235,6 +244,7 @@ export const performRiskAnalysis = async (questionnaireData: any[], apiKey: stri
         const hasCritical = allData.some(d => d.analysis?.riskLevel === 'CRITICAL');
         const adminEmail = process.env.CRITICAL_ALERT_EMAIL;
         if (hasCritical && adminEmail) {
+            console.log(`🚨 Critical risk detected! Sending alert to ${adminEmail}`);
             const html = criticalRiskAlertEmail({
                 name: undefined,
                 riskTitle: 'Critical risk detected in latest analysis',
@@ -245,9 +255,11 @@ export const performRiskAnalysis = async (questionnaireData: any[], apiKey: stri
                 subject: 'Critical risk detected in INSA analysis',
                 html,
             });
+            console.log(`✅ Critical risk alert email sent successfully`);
         }
-    } catch {
-        // Notification failures must not break analysis
+    } catch (emailError) {
+        // Log email failures but don't break analysis
+        console.error('❌ Failed to send critical risk alert email:', emailError instanceof Error ? emailError.message : emailError);
     }
 
     return results;

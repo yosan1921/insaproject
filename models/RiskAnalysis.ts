@@ -97,29 +97,29 @@ const QuestionAnalysisSchema = new Schema({
 
     // Pre-Mitigation
     preMitigation: {
-      probability: Number, // percentage (0-100)
-      impact: Number, // percentage (0-100)
-      score: Number, // calculated
-      cost: Number // financial cost
+      probability: { type: Number, min: 0, max: 100 }, // percentage (0-100)
+      impact: { type: Number, min: 0, max: 100 }, // percentage (0-100)
+      score: { type: Number, min: 0 }, // calculated
+      cost: { type: Number, min: 0 } // financial cost
     },
 
-    // Current/Post-Mitigation
-    likelihood: Number,
-    impact: Number,
-    riskScore: Number,
-    riskLevel: String,
+    // Current/Post-Mitigation - with validation
+    likelihood: { type: Number, required: true, min: 1, max: 5 },
+    impact: { type: Number, required: true, min: 1, max: 5 },
+    riskScore: { type: Number, required: true, min: 1, max: 25 },
+    riskLevel: { type: String, required: true, enum: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'VERY_LOW'] },
     riskColor: String,
 
     // Post-Mitigation (percentage based)
     postMitigation: {
-      probability: Number, // percentage (0-100)
-      impact: Number, // percentage (0-100)
-      score: Number, // calculated
-      cost: Number // financial cost
+      probability: { type: Number, min: 0, max: 100 }, // percentage (0-100)
+      impact: { type: Number, min: 0, max: 100 }, // percentage (0-100)
+      score: { type: Number, min: 0 }, // calculated
+      cost: { type: Number, min: 0 } // financial cost
     },
 
     // Mitigation details
-    mitigationCost: Number,
+    mitigationCost: { type: Number, min: 0 },
     gap: String,
     threat: String,
     mitigation: String,
@@ -176,10 +176,10 @@ RiskAnalysisSchema.pre('save', async function (next) {
         .findOne({ riskRegisterId: new RegExp(`^RR-${year}-`) })
         .sort({ riskRegisterId: -1 })
         .select('riskRegisterId')
-        .lean();
+        .lean() as { riskRegisterId?: string } | null;
 
       let nextNumber = 1;
-      if (latestRisk && latestRisk.riskRegisterId) {
+      if (latestRisk?.riskRegisterId) {
         const match = latestRisk.riskRegisterId.match(/RR-\d{4}-(\d{4})/);
         if (match) {
           nextNumber = parseInt(match[1], 10) + 1;
@@ -188,12 +188,15 @@ RiskAnalysisSchema.pre('save', async function (next) {
 
       const sequenceNumber = String(nextNumber).padStart(4, '0');
       this.riskRegisterId = `RR-${year}-${sequenceNumber}`;
+
+      console.log(`✅ Generated Risk Register ID: ${this.riskRegisterId}`);
     } catch (error) {
-      console.error('Error generating Risk Register ID:', error);
-      // Fallback to simple counter
-      const count = await mongoose.model('RiskAnalysis').countDocuments();
-      const sequenceNumber = String(count + 1).padStart(4, '0');
-      this.riskRegisterId = `RR-${new Date().getFullYear()}-${sequenceNumber}`;
+      console.error('❌ Error generating Risk Register ID:', error);
+      // Improved fallback: use timestamp + random to ensure uniqueness
+      const timestamp = Date.now().toString().slice(-6);
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      this.riskRegisterId = `RR-${new Date().getFullYear()}-${timestamp}${random}`;
+      console.log(`⚠️ Using fallback Risk Register ID: ${this.riskRegisterId}`);
     }
   }
   next();
