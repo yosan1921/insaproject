@@ -4,8 +4,8 @@ import { SessionProvider } from "./components/SessionProvider";
 import ChatWidget from "./components/ChatWidget";
 
 export const metadata: Metadata = {
-  title: "CSRARS - Cyber Security Risk Analysis & Reporting System",
-  description: "cybersecurity risk analysis and reporting",
+  title: "INSA - Security Assessment & Analysis Platform",
+  description: "INSA Cyber Security Risk Assessment and Reporting System",
   icons: {
     icon: "/logo2.png",
     shortcut: "/logo2.png",
