@@ -61,7 +61,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       icon: "📊",
       items: [
         { name: "Assessment", href: "/questionnaires" },
-        { name: "Risk Analysis", href: "/risk-analysis" },
         { name: "Risk Evaluation", href: "/risk-evaluation" },
         { name: "ALE Analysis", href: "/ale-analysis" },
         { name: "Trend Analysis", href: "/trends" },
@@ -73,7 +72,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       icon: "🎯",
       items: [
         { name: "Risk Treatment", href: "/risk-treatment" },
-        { name: "Treatment Options", href: "/risk-treatment-options" },
         { name: "Risk Matrix", href: "/risk-matrix" },
         { name: "Risk Register", href: "/risks" },
         { name: "Assignments", href: "/assignments" },

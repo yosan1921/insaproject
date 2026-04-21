@@ -489,48 +489,569 @@ export default function RiskRegisterFromAssessmentsPage() {
         </div>
 
         {/* Table + editing */}
-        <div className="bg-slate-800 rounded-lg border border-slate-700 p-4 overflow-x-auto">
+        <div className="bg-slate-800 rounded-lg border border-slate-700 p-4">
           {rows.length === 0 ? (
             <p className="text-sm text-slate-400">
               No records match the current filters.
             </p>
           ) : (
-            <table className="min-w-full text-xs text-left border-collapse text-slate-100">
-              <thead>
-                <tr className="border-b border-slate-700">
-                  <th className="py-2 pr-3">Actions</th>
-                  <th className="py-2 pr-3">Risk ID</th>
-                  <th className="py-2 pr-3">Risk Name</th>
-                  <th className="py-2 pr-3">Status</th>
-                  <th className="py-2 pr-3">Risk/Issue</th>
-                  <th className="py-2 pr-3">Threat/Opp</th>
-                  <th className="py-2 pr-3">Assigned To</th>
-                  <th className="py-2 pr-3">Company</th>
-                  <th className="py-2 pr-3">Category</th>
-                  <th className="py-2 pr-3">Date</th>
-                  <th className="py-2 pr-3">Level</th>
-                  <th className="py-2 pr-3 bg-orange-900/20">Pre-Prob%</th>
-                  <th className="py-2 pr-3 bg-orange-900/20">Pre-Impact%</th>
-                  <th className="py-2 pr-3 bg-orange-900/20">Pre-Score%</th>
-                  <th className="py-2 pr-3 bg-orange-900/20">Pre-Cost$</th>
-                  <th className="py-2 pr-3">Likelihood</th>
-                  <th className="py-2 pr-3">Impact</th>
-                  <th className="py-2 pr-3">Risk Score</th>
-                  <th className="py-2 pr-3">Risk Level</th>
-                  <th className="py-2 pr-3 bg-green-900/20">Post-Prob%</th>
-                  <th className="py-2 pr-3 bg-green-900/20">Post-Impact%</th>
-                  <th className="py-2 pr-3 bg-green-900/20">Post-Score%</th>
-                  <th className="py-2 pr-3 bg-green-900/20">Post-Cost$</th>
-                  <th className="py-2 pr-3">Mitigation Cost$</th>
-                  <th className="py-2 pr-3">Gap</th>
-                  <th className="py-2 pr-3">Threat</th>
-                  <th className="py-2 pr-3">Mitigation</th>
-                  <th className="py-2 pr-3">Description</th>
-                  <th className="py-2 pr-3">Impact Label</th>
-                  <th className="py-2 pr-3">Impact Description</th>
-                </tr>
-              </thead>
-              <tbody>
+            <>
+              {/* Desktop Table View - Hidden on mobile */}
+              <div className="hidden lg:block overflow-x-auto">
+                <table className="min-w-full text-xs text-left border-collapse text-slate-100">
+                  <thead>
+                    <tr className="border-b border-slate-700">
+                      <th className="py-2 pr-3 sticky left-0 bg-slate-800 z-10">Actions</th>
+                      <th className="py-2 pr-3">Risk ID</th>
+                      <th className="py-2 pr-3">Risk Name</th>
+                      <th className="py-2 pr-3">Status</th>
+                      <th className="py-2 pr-3">Risk/Issue</th>
+                      <th className="py-2 pr-3">Threat/Opp</th>
+                      <th className="py-2 pr-3">Assigned To</th>
+                      <th className="py-2 pr-3">Company</th>
+                      <th className="py-2 pr-3">Category</th>
+                      <th className="py-2 pr-3">Date</th>
+                      <th className="py-2 pr-3">Level</th>
+                      <th className="py-2 pr-3 bg-orange-900/20">Pre-Prob%</th>
+                      <th className="py-2 pr-3 bg-orange-900/20">Pre-Impact%</th>
+                      <th className="py-2 pr-3 bg-orange-900/20">Pre-Score%</th>
+                      <th className="py-2 pr-3 bg-orange-900/20">Pre-Cost$</th>
+                      <th className="py-2 pr-3">Likelihood</th>
+                      <th className="py-2 pr-3">Impact</th>
+                      <th className="py-2 pr-3">Risk Score</th>
+                      <th className="py-2 pr-3">Risk Level</th>
+                      <th className="py-2 pr-3 bg-green-900/20">Post-Prob%</th>
+                      <th className="py-2 pr-3 bg-green-900/20">Post-Impact%</th>
+                      <th className="py-2 pr-3 bg-green-900/20">Post-Score%</th>
+                      <th className="py-2 pr-3 bg-green-900/20">Post-Cost$</th>
+                      <th className="py-2 pr-3">Mitigation Cost$</th>
+                      <th className="py-2 pr-3">Gap</th>
+                      <th className="py-2 pr-3">Threat</th>
+                      <th className="py-2 pr-3">Mitigation</th>
+                      <th className="py-2 pr-3">Description</th>
+                      <th className="py-2 pr-3">Impact Label</th>
+                      <th className="py-2 pr-3">Impact Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r, idx) => {
+                      const isEditing =
+                        editing &&
+                        editing.analysisId === r.analysisId &&
+                        editing.questionId === r.questionId &&
+                        editing.level === r.level;
+
+                      return (
+                        <tr
+                          key={`${r.analysisId}-${r.questionId}-${idx}`}
+                          className="border-b border-slate-700 last:border-b-0"
+                        >
+                          {/* Actions */}
+                          <td className="py-2 pr-3">
+                            {isEditing ? (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={saveEdit}
+                                  disabled={saving}
+                                  className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs"
+                                >
+                                  {saving ? "Saving..." : "Save"}
+                                </button>
+                                <button
+                                  onClick={cancelEditing}
+                                  disabled={saving}
+                                  className="px-2 py-1 bg-slate-600 hover:bg-slate-500 text-white rounded text-xs"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() =>
+                                  startEditing({
+                                    analysisId: r.analysisId,
+                                    questionId: r.questionId,
+                                    level: r.level,
+                                    riskName: r.riskName,
+                                    description: r.description,
+                                    status: r.status,
+                                    riskType: r.riskType,
+                                    threatOpportunity: r.threatOpportunity,
+                                    assignedTo: r.assignedTo,
+                                    preMitigationProbability: r.preMitigationProbability,
+                                    preMitigationImpact: r.preMitigationImpact,
+                                    preMitigationCost: r.preMitigationCost,
+                                    likelihood: r.likelihood,
+                                    impact: r.impact,
+                                    postMitigationProbability: r.postMitigationProbability,
+                                    postMitigationImpact: r.postMitigationImpact,
+                                    postMitigationCost: r.postMitigationCost,
+                                    mitigationCost: r.mitigationCost,
+                                    gap: r.gap,
+                                    threat: r.threat,
+                                    mitigation: r.mitigation,
+                                    impactLabel: r.impactLabel,
+                                    impactDescription: r.impactDescription,
+                                  })
+                                }
+                                className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs"
+                              >
+                                Edit
+                              </button>
+                            )}
+                          </td>
+
+                          <td className="py-2 pr-3 font-mono text-emerald-400">{r.riskRegisterId}</td>
+
+                          {/* Risk Name */}
+                          <td className="py-2 pr-3">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={editing.riskName}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev ? { ...prev, riskName: e.target.value } : prev
+                                  )
+                                }
+                                className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              r.riskName || '-'
+                            )}
+                          </td>
+
+                          {/* Status */}
+                          <td className="py-2 pr-3">
+                            {isEditing ? (
+                              <select
+                                value={editing.status}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev ? { ...prev, status: e.target.value as 'Open' | 'Closed' } : prev
+                                  )
+                                }
+                                className="w-24 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              >
+                                <option value="Open">Open</option>
+                                <option value="Closed">Closed</option>
+                              </select>
+                            ) : (
+                              <span className={`px-2 py-0.5 rounded text-xs ${r.status === 'Open' ? 'bg-yellow-600/30 text-yellow-300' : 'bg-green-600/30 text-green-300'}`}>
+                                {r.status || 'Open'}
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Risk/Issue */}
+                          <td className="py-2 pr-3">
+                            {isEditing ? (
+                              <select
+                                value={editing.riskType}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev ? { ...prev, riskType: e.target.value as 'Risk' | 'Issue' } : prev
+                                  )
+                                }
+                                className="w-24 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              >
+                                <option value="Risk">Risk</option>
+                                <option value="Issue">Issue</option>
+                              </select>
+                            ) : (
+                              r.riskType || 'Risk'
+                            )}
+                          </td>
+
+                          {/* Threat/Opportunity */}
+                          <td className="py-2 pr-3">
+                            {isEditing ? (
+                              <select
+                                value={editing.threatOpportunity}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev ? { ...prev, threatOpportunity: e.target.value as 'Threat' | 'Opportunity' } : prev
+                                  )
+                                }
+                                className="w-28 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              >
+                                <option value="Threat">Threat</option>
+                                <option value="Opportunity">Opportunity</option>
+                              </select>
+                            ) : (
+                              r.threatOpportunity || 'Threat'
+                            )}
+                          </td>
+
+                          {/* Assigned To */}
+                          <td className="py-2 pr-3">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={editing.assignedTo}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev ? { ...prev, assignedTo: e.target.value } : prev
+                                  )
+                                }
+                                className="w-32 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              r.assignedTo || '-'
+                            )}
+                          </td>
+
+                          <td className="py-2 pr-3">{r.company}</td>
+                          <td className="py-2 pr-3">{r.category}</td>
+                          <td className="py-2 pr-3">
+                            {r.date
+                              ? new Date(r.date).toLocaleDateString()
+                              : "-"}
+                          </td>
+                          <td className="py-2 pr-3">{r.level}</td>
+
+                          {/* Pre-Mitigation Probability */}
+                          <td className="py-2 pr-3 bg-orange-900/10">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                value={editing.preMitigationProbability}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev ? { ...prev, preMitigationProbability: e.target.value } : prev
+                                  )
+                                }
+                                className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              `${r.preMitigationProbability || 0}%`
+                            )}
+                          </td>
+
+                          {/* Pre-Mitigation Impact */}
+                          <td className="py-2 pr-3 bg-orange-900/10">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                value={editing.preMitigationImpact}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev ? { ...prev, preMitigationImpact: e.target.value } : prev
+                                  )
+                                }
+                                className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              `${r.preMitigationImpact || 0}%`
+                            )}
+                          </td>
+
+                          {/* Pre-Mitigation Score (calculated) */}
+                          <td className="py-2 pr-3 bg-orange-900/10">
+                            {r.preMitigationScore?.toFixed(2) || 0}%
+                          </td>
+
+                          {/* Pre-Mitigation Cost */}
+                          <td className="py-2 pr-3 bg-orange-900/10">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                min={0}
+                                step={0.01}
+                                value={editing.preMitigationCost}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev ? { ...prev, preMitigationCost: e.target.value } : prev
+                                  )
+                                }
+                                className="w-20 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              `$${r.preMitigationCost?.toFixed(2) || 0}`
+                            )}
+                          </td>
+
+                          {/* Likelihood */}
+                          <td className="py-2 pr-3">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                min={0}
+                                max={5}
+                                value={editing.likelihood}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev
+                                      ? {
+                                        ...prev,
+                                        likelihood: e.target.value,
+                                      }
+                                      : prev
+                                  )
+                                }
+                                className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              r.likelihood
+                            )}
+                          </td>
+
+                          {/* Impact */}
+                          <td className="py-2 pr-3">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                min={0}
+                                max={5}
+                                value={editing.impact}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev
+                                      ? {
+                                        ...prev,
+                                        impact: e.target.value,
+                                      }
+                                      : prev
+                                  )
+                                }
+                                className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              r.impact
+                            )}
+                          </td>
+
+                          {/* Risk score / level (readonly, recalculated backend) */}
+                          <td className="py-2 pr-3">{r.riskScore}</td>
+                          <td className="py-2 pr-3">
+                            <span className={`px-2 py-0.5 rounded text-xs ${r.riskLevel === 'CRITICAL' ? 'bg-red-600/30 text-red-300' :
+                              r.riskLevel === 'HIGH' ? 'bg-orange-600/30 text-orange-300' :
+                                r.riskLevel === 'MEDIUM' ? 'bg-yellow-600/30 text-yellow-300' :
+                                  'bg-green-600/30 text-green-300'
+                              }`}>
+                              {r.riskLevel}
+                            </span>
+                          </td>
+
+                          {/* Post-Mitigation Probability */}
+                          <td className="py-2 pr-3 bg-green-900/10">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                value={editing.postMitigationProbability}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev ? { ...prev, postMitigationProbability: e.target.value } : prev
+                                  )
+                                }
+                                className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              `${r.postMitigationProbability || 0}%`
+                            )}
+                          </td>
+
+                          {/* Post-Mitigation Impact */}
+                          <td className="py-2 pr-3 bg-green-900/10">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                value={editing.postMitigationImpact}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev ? { ...prev, postMitigationImpact: e.target.value } : prev
+                                  )
+                                }
+                                className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              `${r.postMitigationImpact || 0}%`
+                            )}
+                          </td>
+
+                          {/* Post-Mitigation Score (calculated) */}
+                          <td className="py-2 pr-3 bg-green-900/10">
+                            {r.postMitigationScore?.toFixed(2) || 0}%
+                          </td>
+
+                          {/* Post-Mitigation Cost */}
+                          <td className="py-2 pr-3 bg-green-900/10">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                min={0}
+                                step={0.01}
+                                value={editing.postMitigationCost}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev ? { ...prev, postMitigationCost: e.target.value } : prev
+                                  )
+                                }
+                                className="w-20 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              `$${r.postMitigationCost?.toFixed(2) || 0}`
+                            )}
+                          </td>
+
+                          {/* Mitigation Cost */}
+                          <td className="py-2 pr-3">
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                min={0}
+                                step={0.01}
+                                value={editing.mitigationCost}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev ? { ...prev, mitigationCost: e.target.value } : prev
+                                  )
+                                }
+                                className="w-20 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              `$${r.mitigationCost?.toFixed(2) || 0}`
+                            )}
+                          </td>
+
+                          {/* Gap */}
+                          <td className="py-2 pr-3">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={editing.gap}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev
+                                      ? { ...prev, gap: e.target.value }
+                                      : prev
+                                  )
+                                }
+                                className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              r.gap || '-'
+                            )}
+                          </td>
+
+                          {/* Threat */}
+                          <td className="py-2 pr-3">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={editing.threat}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev
+                                      ? { ...prev, threat: e.target.value }
+                                      : prev
+                                  )
+                                }
+                                className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              r.threat || '-'
+                            )}
+                          </td>
+
+                          {/* Mitigation */}
+                          <td className="py-2 pr-3">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={editing.mitigation}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev ? { ...prev, mitigation: e.target.value } : prev
+                                  )
+                                }
+                                className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              r.mitigation || '-'
+                            )}
+                          </td>
+
+                          {/* Description */}
+                          <td className="py-2 pr-3">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={editing.description}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev ? { ...prev, description: e.target.value } : prev
+                                  )
+                                }
+                                className="w-64 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              r.description || '-'
+                            )}
+                          </td>
+
+                          {/* Impact label */}
+                          <td className="py-2 pr-3">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={editing.impactLabel}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev
+                                      ? {
+                                        ...prev,
+                                        impactLabel: e.target.value,
+                                      }
+                                      : prev
+                                  )
+                                }
+                                className="w-32 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              r.impactLabel || '-'
+                            )}
+                          </td>
+
+                          {/* Impact description */}
+                          <td className="py-2 pr-3">
+                            {isEditing ? (
+                              <input
+                                type="text"
+                                value={editing.impactDescription}
+                                onChange={(e) =>
+                                  setEditing((prev) =>
+                                    prev
+                                      ? {
+                                        ...prev,
+                                        impactDescription: e.target.value,
+                                      }
+                                      : prev
+                                  )
+                                }
+                                className="w-64 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
+                              />
+                            ) : (
+                              r.impactDescription || '-'
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View - Visible on mobile/tablet */}
+              <div className="lg:hidden space-y-4">
                 {rows.map((r, idx) => {
                   const isEditing =
                     editing &&
@@ -539,512 +1060,145 @@ export default function RiskRegisterFromAssessmentsPage() {
                     editing.level === r.level;
 
                   return (
-                    <tr
-                      key={`${r.analysisId}-${r.questionId}-${idx}`}
-                      className="border-b border-slate-700 last:border-b-0"
+                    <div
+                      key={`mobile-${r.analysisId}-${r.questionId}-${idx}`}
+                      className="bg-slate-900 rounded-lg border border-slate-700 p-4 space-y-3"
                     >
-                      {/* Actions */}
-                      <td className="py-2 pr-3">
-                        {isEditing ? (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={saveEdit}
-                              disabled={saving}
-                              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs"
-                            >
-                              {saving ? "Saving..." : "Save"}
-                            </button>
-                            <button
-                              onClick={cancelEditing}
-                              disabled={saving}
-                              className="px-2 py-1 bg-slate-600 hover:bg-slate-500 text-white rounded text-xs"
-                            >
-                              Cancel
-                            </button>
+                      {/* Header */}
+                      <div className="flex justify-between items-start border-b border-slate-700 pb-3">
+                        <div className="flex-1">
+                          <div className="font-mono text-emerald-400 text-sm font-semibold">{r.riskRegisterId}</div>
+                          <div className="text-white font-medium mt-1">{r.riskName || 'Unnamed Risk'}</div>
+                        </div>
+                        <button
+                          onClick={() => startEditing({
+                            analysisId: r.analysisId,
+                            questionId: r.questionId,
+                            level: r.level,
+                            riskName: r.riskName,
+                            description: r.description,
+                            status: r.status,
+                            riskType: r.riskType,
+                            threatOpportunity: r.threatOpportunity,
+                            assignedTo: r.assignedTo,
+                            preMitigationProbability: r.preMitigationProbability,
+                            preMitigationImpact: r.preMitigationImpact,
+                            preMitigationCost: r.preMitigationCost,
+                            likelihood: r.likelihood,
+                            impact: r.impact,
+                            postMitigationProbability: r.postMitigationProbability,
+                            postMitigationImpact: r.postMitigationImpact,
+                            postMitigationCost: r.postMitigationCost,
+                            mitigationCost: r.mitigationCost,
+                            gap: r.gap,
+                            threat: r.threat,
+                            mitigation: r.mitigation,
+                            impactLabel: r.impactLabel,
+                            impactDescription: r.impactDescription,
+                          })}
+                          className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs"
+                        >
+                          Edit
+                        </button>
+                      </div>
+
+                      {/* Basic Info */}
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-slate-400">Status:</span>
+                          <div className="mt-1">
+                            <span className={`px-2 py-0.5 rounded ${r.status === 'Open' ? 'bg-yellow-600/30 text-yellow-300' : 'bg-green-600/30 text-green-300'}`}>
+                              {r.status || 'Open'}
+                            </span>
                           </div>
-                        ) : (
-                          <button
-                            onClick={() =>
-                              startEditing({
-                                analysisId: r.analysisId,
-                                questionId: r.questionId,
-                                level: r.level,
-                                riskName: r.riskName,
-                                description: r.description,
-                                status: r.status,
-                                riskType: r.riskType,
-                                threatOpportunity: r.threatOpportunity,
-                                assignedTo: r.assignedTo,
-                                preMitigationProbability: r.preMitigationProbability,
-                                preMitigationImpact: r.preMitigationImpact,
-                                preMitigationCost: r.preMitigationCost,
-                                likelihood: r.likelihood,
-                                impact: r.impact,
-                                postMitigationProbability: r.postMitigationProbability,
-                                postMitigationImpact: r.postMitigationImpact,
-                                postMitigationCost: r.postMitigationCost,
-                                mitigationCost: r.mitigationCost,
-                                gap: r.gap,
-                                threat: r.threat,
-                                mitigation: r.mitigation,
-                                impactLabel: r.impactLabel,
-                                impactDescription: r.impactDescription,
-                              })
-                            }
-                            className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs"
-                          >
-                            Edit
-                          </button>
-                        )}
-                      </td>
+                        </div>
+                        <div>
+                          <span className="text-slate-400">Risk Level:</span>
+                          <div className="mt-1">
+                            <span className={`px-2 py-0.5 rounded text-xs ${r.riskLevel === 'CRITICAL' ? 'bg-red-600/30 text-red-300' :
+                              r.riskLevel === 'HIGH' ? 'bg-orange-600/30 text-orange-300' :
+                                r.riskLevel === 'MEDIUM' ? 'bg-yellow-600/30 text-yellow-300' :
+                                  'bg-green-600/30 text-green-300'
+                              }`}>
+                              {r.riskLevel}
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-slate-400">Company:</span>
+                          <div className="mt-1 text-white">{r.company}</div>
+                        </div>
+                        <div>
+                          <span className="text-slate-400">Category:</span>
+                          <div className="mt-1 text-white">{r.category}</div>
+                        </div>
+                      </div>
 
-                      <td className="py-2 pr-3 font-mono text-emerald-400">{r.riskRegisterId}</td>
+                      {/* Pre-Mitigation */}
+                      <div className="bg-orange-900/10 rounded p-3 space-y-2">
+                        <div className="text-orange-400 font-semibold text-xs">Pre-Mitigation</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-slate-400">Probability:</span>
+                            <div className="mt-1 text-white">{r.preMitigationProbability || 0}%</div>
+                          </div>
+                          <div>
+                            <span className="text-slate-400">Impact:</span>
+                            <div className="mt-1 text-white">{r.preMitigationImpact || 0}%</div>
+                          </div>
+                        </div>
+                      </div>
 
-                      {/* Risk Name */}
-                      <td className="py-2 pr-3">
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={editing.riskName}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev ? { ...prev, riskName: e.target.value } : prev
-                              )
-                            }
-                            className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          r.riskName || '-'
-                        )}
-                      </td>
+                      {/* Current */}
+                      <div className="bg-blue-900/10 rounded p-3 space-y-2">
+                        <div className="text-blue-400 font-semibold text-xs">Current Assessment</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-slate-400">Likelihood:</span>
+                            <div className="mt-1 text-white">{r.likelihood}/5</div>
+                          </div>
+                          <div>
+                            <span className="text-slate-400">Impact:</span>
+                            <div className="mt-1 text-white">{r.impact}/5</div>
+                          </div>
+                        </div>
+                      </div>
 
-                      {/* Status */}
-                      <td className="py-2 pr-3">
-                        {isEditing ? (
-                          <select
-                            value={editing.status}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev ? { ...prev, status: e.target.value as 'Open' | 'Closed' } : prev
-                              )
-                            }
-                            className="w-24 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          >
-                            <option value="Open">Open</option>
-                            <option value="Closed">Closed</option>
-                          </select>
-                        ) : (
-                          <span className={`px-2 py-0.5 rounded text-xs ${r.status === 'Open' ? 'bg-yellow-600/30 text-yellow-300' : 'bg-green-600/30 text-green-300'}`}>
-                            {r.status || 'Open'}
-                          </span>
-                        )}
-                      </td>
+                      {/* Post-Mitigation */}
+                      <div className="bg-green-900/10 rounded p-3 space-y-2">
+                        <div className="text-green-400 font-semibold text-xs">Post-Mitigation</div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <span className="text-slate-400">Probability:</span>
+                            <div className="mt-1 text-white">{r.postMitigationProbability || 0}%</div>
+                          </div>
+                          <div>
+                            <span className="text-slate-400">Impact:</span>
+                            <div className="mt-1 text-white">{r.postMitigationImpact || 0}%</div>
+                          </div>
+                        </div>
+                      </div>
 
-                      {/* Risk/Issue */}
-                      <td className="py-2 pr-3">
-                        {isEditing ? (
-                          <select
-                            value={editing.riskType}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev ? { ...prev, riskType: e.target.value as 'Risk' | 'Issue' } : prev
-                              )
-                            }
-                            className="w-24 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          >
-                            <option value="Risk">Risk</option>
-                            <option value="Issue">Issue</option>
-                          </select>
-                        ) : (
-                          r.riskType || 'Risk'
-                        )}
-                      </td>
-
-                      {/* Threat/Opportunity */}
-                      <td className="py-2 pr-3">
-                        {isEditing ? (
-                          <select
-                            value={editing.threatOpportunity}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev ? { ...prev, threatOpportunity: e.target.value as 'Threat' | 'Opportunity' } : prev
-                              )
-                            }
-                            className="w-28 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          >
-                            <option value="Threat">Threat</option>
-                            <option value="Opportunity">Opportunity</option>
-                          </select>
-                        ) : (
-                          r.threatOpportunity || 'Threat'
-                        )}
-                      </td>
-
-                      {/* Assigned To */}
-                      <td className="py-2 pr-3">
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={editing.assignedTo}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev ? { ...prev, assignedTo: e.target.value } : prev
-                              )
-                            }
-                            className="w-32 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          r.assignedTo || '-'
-                        )}
-                      </td>
-
-                      <td className="py-2 pr-3">{r.company}</td>
-                      <td className="py-2 pr-3">{r.category}</td>
-                      <td className="py-2 pr-3">
-                        {r.date
-                          ? new Date(r.date).toLocaleDateString()
-                          : "-"}
-                      </td>
-                      <td className="py-2 pr-3">{r.level}</td>
-
-                      {/* Pre-Mitigation Probability */}
-                      <td className="py-2 pr-3 bg-orange-900/10">
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={editing.preMitigationProbability}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev ? { ...prev, preMitigationProbability: e.target.value } : prev
-                              )
-                            }
-                            className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          `${r.preMitigationProbability || 0}%`
-                        )}
-                      </td>
-
-                      {/* Pre-Mitigation Impact */}
-                      <td className="py-2 pr-3 bg-orange-900/10">
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={editing.preMitigationImpact}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev ? { ...prev, preMitigationImpact: e.target.value } : prev
-                              )
-                            }
-                            className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          `${r.preMitigationImpact || 0}%`
-                        )}
-                      </td>
-
-                      {/* Pre-Mitigation Score (calculated) */}
-                      <td className="py-2 pr-3 bg-orange-900/10">
-                        {r.preMitigationScore?.toFixed(2) || 0}%
-                      </td>
-
-                      {/* Pre-Mitigation Cost */}
-                      <td className="py-2 pr-3 bg-orange-900/10">
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            min={0}
-                            step={0.01}
-                            value={editing.preMitigationCost}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev ? { ...prev, preMitigationCost: e.target.value } : prev
-                              )
-                            }
-                            className="w-20 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          `$${r.preMitigationCost?.toFixed(2) || 0}`
-                        )}
-                      </td>
-
-                      {/* Likelihood */}
-                      <td className="py-2 pr-3">
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            min={0}
-                            max={5}
-                            value={editing.likelihood}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev
-                                  ? {
-                                    ...prev,
-                                    likelihood: e.target.value,
-                                  }
-                                  : prev
-                              )
-                            }
-                            className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          r.likelihood
-                        )}
-                      </td>
-
-                      {/* Impact */}
-                      <td className="py-2 pr-3">
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            min={0}
-                            max={5}
-                            value={editing.impact}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev
-                                  ? {
-                                    ...prev,
-                                    impact: e.target.value,
-                                  }
-                                  : prev
-                              )
-                            }
-                            className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          r.impact
-                        )}
-                      </td>
-
-                      {/* Risk score / level (readonly, recalculated backend) */}
-                      <td className="py-2 pr-3">{r.riskScore}</td>
-                      <td className="py-2 pr-3">
-                        <span className={`px-2 py-0.5 rounded text-xs ${r.riskLevel === 'CRITICAL' ? 'bg-red-600/30 text-red-300' :
-                            r.riskLevel === 'HIGH' ? 'bg-orange-600/30 text-orange-300' :
-                              r.riskLevel === 'MEDIUM' ? 'bg-yellow-600/30 text-yellow-300' :
-                                'bg-green-600/30 text-green-300'
-                          }`}>
-                          {r.riskLevel}
-                        </span>
-                      </td>
-
-                      {/* Post-Mitigation Probability */}
-                      <td className="py-2 pr-3 bg-green-900/10">
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={editing.postMitigationProbability}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev ? { ...prev, postMitigationProbability: e.target.value } : prev
-                              )
-                            }
-                            className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          `${r.postMitigationProbability || 0}%`
-                        )}
-                      </td>
-
-                      {/* Post-Mitigation Impact */}
-                      <td className="py-2 pr-3 bg-green-900/10">
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={editing.postMitigationImpact}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev ? { ...prev, postMitigationImpact: e.target.value } : prev
-                              )
-                            }
-                            className="w-16 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          `${r.postMitigationImpact || 0}%`
-                        )}
-                      </td>
-
-                      {/* Post-Mitigation Score (calculated) */}
-                      <td className="py-2 pr-3 bg-green-900/10">
-                        {r.postMitigationScore?.toFixed(2) || 0}%
-                      </td>
-
-                      {/* Post-Mitigation Cost */}
-                      <td className="py-2 pr-3 bg-green-900/10">
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            min={0}
-                            step={0.01}
-                            value={editing.postMitigationCost}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev ? { ...prev, postMitigationCost: e.target.value } : prev
-                              )
-                            }
-                            className="w-20 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          `$${r.postMitigationCost?.toFixed(2) || 0}`
-                        )}
-                      </td>
-
-                      {/* Mitigation Cost */}
-                      <td className="py-2 pr-3">
-                        {isEditing ? (
-                          <input
-                            type="number"
-                            min={0}
-                            step={0.01}
-                            value={editing.mitigationCost}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev ? { ...prev, mitigationCost: e.target.value } : prev
-                              )
-                            }
-                            className="w-20 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          `$${r.mitigationCost?.toFixed(2) || 0}`
-                        )}
-                      </td>
-
-                      {/* Gap */}
-                      <td className="py-2 pr-3">
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={editing.gap}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev
-                                  ? { ...prev, gap: e.target.value }
-                                  : prev
-                              )
-                            }
-                            className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          r.gap || '-'
-                        )}
-                      </td>
-
-                      {/* Threat */}
-                      <td className="py-2 pr-3">
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={editing.threat}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev
-                                  ? { ...prev, threat: e.target.value }
-                                  : prev
-                              )
-                            }
-                            className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          r.threat || '-'
-                        )}
-                      </td>
-
-                      {/* Mitigation */}
-                      <td className="py-2 pr-3">
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={editing.mitigation}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev ? { ...prev, mitigation: e.target.value } : prev
-                              )
-                            }
-                            className="w-40 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          r.mitigation || '-'
-                        )}
-                      </td>
-
-                      {/* Description */}
-                      <td className="py-2 pr-3">
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={editing.description}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev ? { ...prev, description: e.target.value } : prev
-                              )
-                            }
-                            className="w-64 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          r.description || '-'
-                        )}
-                      </td>
-
-                      {/* Impact label */}
-                      <td className="py-2 pr-3">
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={editing.impactLabel}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev
-                                  ? {
-                                    ...prev,
-                                    impactLabel: e.target.value,
-                                  }
-                                  : prev
-                              )
-                            }
-                            className="w-32 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          r.impactLabel || '-'
-                        )}
-                      </td>
-
-                      {/* Impact description */}
-                      <td className="py-2 pr-3">
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={editing.impactDescription}
-                            onChange={(e) =>
-                              setEditing((prev) =>
-                                prev
-                                  ? {
-                                    ...prev,
-                                    impactDescription: e.target.value,
-                                  }
-                                  : prev
-                              )
-                            }
-                            className="w-64 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-white"
-                          />
-                        ) : (
-                          r.impactDescription || '-'
-                        )}
-                      </td>
-                    </tr>
+                      {/* Details */}
+                      <div className="space-y-2 text-xs">
+                        <div>
+                          <span className="text-slate-400">Threat:</span>
+                          <div className="mt-1 text-white">{r.threat || '-'}</div>
+                        </div>
+                        <div>
+                          <span className="text-slate-400">Gap:</span>
+                          <div className="mt-1 text-white">{r.gap || '-'}</div>
+                        </div>
+                        <div>
+                          <span className="text-slate-400">Mitigation:</span>
+                          <div className="mt-1 text-white">{r.mitigation || '-'}</div>
+                        </div>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+            </>
           )}
         </div>
       </div>
