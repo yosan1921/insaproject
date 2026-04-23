@@ -1,0 +1,210 @@
+import mongoose, { Schema, Document, Model } from 'mongoose';
+
+export interface IQuestionAnalysis {
+  questionId: number;
+  section: string;
+  question: string;
+  answer: string;
+  level: string;
+  analysis: {
+    // Basic fields
+    riskName?: string;
+    description?: string;
+    status?: 'Open' | 'Closed';
+    riskType?: 'Risk' | 'Issue';
+    threatOpportunity?: 'Threat' | 'Opportunity';
+    assignedTo?: string;
+
+    // Pre-Mitigation
+    preMitigation?: {
+      probability: number; // percentage (0-100)
+      impact: number; // percentage (0-100)
+      score: number; // calculated
+      cost: number; // financial cost
+    };
+
+    // Current/Post-Mitigation
+    likelihood: number;
+    impact: number;
+    riskScore: number;
+    riskLevel: string;
+    riskColor: string;
+
+    // Post-Mitigation (percentage based)
+    postMitigation?: {
+      probability: number; // percentage (0-100)
+      impact: number; // percentage (0-100)
+      score: number; // calculated
+      cost: number; // financial cost
+    };
+
+    // Mitigation details
+    mitigationCost?: number;
+    gap: string;
+    threat: string;
+    mitigation: string;
+
+    // Additional fields
+    impactLabel?: string;
+    likelihoodLabel?: string;
+    impactDescription?: string;
+  };
+  timestamp: Date;
+}
+
+export interface IRiskAnalysis extends Document {
+  riskRegisterId?: string; // Unique Risk Register ID (e.g., RR-2026-0001) - auto-generated
+  questionnaireId: mongoose.Types.ObjectId;
+  company: string;
+  category: string;
+  tenantId?: string;
+  metadata: {
+    timestamp: Date;
+    totalQuestions: number;
+    levels: {
+      operational: number;
+      tactical: number;
+      strategic: number;
+    };
+  };
+  operational: IQuestionAnalysis[];
+  tactical: IQuestionAnalysis[];
+  strategic: IQuestionAnalysis[];
+  summary: {
+    operational: any;
+    tactical: any;
+    strategic: any;
+    overall: any;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const QuestionAnalysisSchema = new Schema({
+  questionId: Number,
+  section: String,
+  question: String,
+  answer: String,
+  level: String,
+  analysis: {
+    // Basic fields
+    riskName: String,
+    description: String,
+    status: { type: String, enum: ['Open', 'Closed'], default: 'Open' },
+    riskType: { type: String, enum: ['Risk', 'Issue'], default: 'Risk' },
+    threatOpportunity: { type: String, enum: ['Threat', 'Opportunity'], default: 'Threat' },
+    assignedTo: String,
+
+    // Pre-Mitigation
+    preMitigation: {
+      probability: Number, // percentage (0-100)
+      impact: Number, // percentage (0-100)
+      score: Number, // calculated
+      cost: Number // financial cost
+    },
+
+    // Current/Post-Mitigation
+    likelihood: Number,
+    impact: Number,
+    riskScore: Number,
+    riskLevel: String,
+    riskColor: String,
+
+    // Post-Mitigation (percentage based)
+    postMitigation: {
+      probability: Number, // percentage (0-100)
+      impact: Number, // percentage (0-100)
+      score: Number, // calculated
+      cost: Number // financial cost
+    },
+
+    // Mitigation details
+    mitigationCost: Number,
+    gap: String,
+    threat: String,
+    mitigation: String,
+
+    // Additional fields
+    impactLabel: String,
+    likelihoodLabel: String,
+    impactDescription: String
+  },
+  timestamp: Date
+});
+
+const RiskAnalysisSchema = new Schema<IRiskAnalysis>(
+  {
+    riskRegisterId: {
+      type: String,
+      unique: true,
+      sparse: true // Allow null/undefined temporarily before pre-save hook runs
+    },
+    questionnaireId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Questionnaire',
+      required: true,
+      unique: true // Prevent duplicate analyses
+    },
+    company: { type: String, required: true },
+    category: { type: String, required: true },
+    tenantId: { type: String },
+    metadata: {
+      timestamp: Date,
+      totalQuestions: Number,
+      levels: {
+        operational: Number,
+        tactical: Number,
+        strategic: Number
+      }
+    },
+    operational: [QuestionAnalysisSchema],
+    tactical: [QuestionAnalysisSchema],
+    strategic: [QuestionAnalysisSchema],
+    summary: Schema.Types.Mixed
+  },
+  { timestamps: true }
+);
+
+// Auto-generate Risk Register ID before saving
+RiskAnalysisSchema.pre('save', async function (next) {
+  if (!this.riskRegisterId) {
+    try {
+      const year = new Date().getFullYear();
+
+      // Find the highest existing sequence number for this year
+      const latestRisk = await mongoose.model('RiskAnalysis')
+        .findOne({ riskRegisterId: new RegExp(`^RR-${year}-`) })
+        .sort({ riskRegisterId: -1 })
+        .select('riskRegisterId')
+        .lean();
+
+      let nextNumber = 1;
+      if (latestRisk && latestRisk.riskRegisterId) {
+        const match = latestRisk.riskRegisterId.match(/RR-\d{4}-(\d{4})/);
+        if (match) {
+          nextNumber = parseInt(match[1], 10) + 1;
+        }
+      }
+
+      const sequenceNumber = String(nextNumber).padStart(4, '0');
+      this.riskRegisterId = `RR-${year}-${sequenceNumber}`;
+    } catch (error) {
+      console.error('Error generating Risk Register ID:', error);
+      // Fallback to simple counter
+      const count = await mongoose.model('RiskAnalysis').countDocuments();
+      const sequenceNumber = String(count + 1).padStart(4, '0');
+      this.riskRegisterId = `RR-${new Date().getFullYear()}-${sequenceNumber}`;
+    }
+  }
+  next();
+});
+
+// Create index for faster queries
+// Note: questionnaireId and riskRegisterId indexes are automatically created by unique: true
+RiskAnalysisSchema.index({ company: 1, createdAt: -1 });
+
+const RiskAnalysis: Model<IRiskAnalysis> =
+  mongoose.models.RiskAnalysis ||
+  mongoose.model<IRiskAnalysis>('RiskAnalysis', RiskAnalysisSchema);
+
+export default RiskAnalysis;
