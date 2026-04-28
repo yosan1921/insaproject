@@ -1,6 +1,7 @@
 import { initializeAI, analyzeQuestion } from '@/lib/utils/ai';
 import { sendMail } from "@/lib/mail/mailer";
 import { criticalRiskAlertEmail } from "@/lib/mail/templates/criticalRiskAlert";
+import { calculateCVSSForRisk } from './cvssIntegrationService';
 
 const createQuestionResult = (question: any, analysis: any) => {
     // Validate analysis data
@@ -35,6 +36,25 @@ const createQuestionResult = (question: any, analysis: any) => {
         riskName = question.section ? question.section.toUpperCase() : `RISK-${question.id}`;
     }
 
+    // 🆕 AUTOMATIC CVSS CALCULATION
+    // Calculate CVSS score based on threat, question, and answer
+    let cvssData = null;
+    try {
+        cvssData = calculateCVSSForRisk({
+            threat: analysis.threat || '',
+            question: question.question || '',
+            answer: question.answer || '',
+            section: question.section || ''
+        });
+
+        // If CVSS calculation succeeded, use CVSS-derived likelihood/impact if higher
+        if (cvssData) {
+            console.log(`✅ [CVSS] Auto-calculated for Q${question.id}: Score ${cvssData.cvssScore} (${cvssData.cvssSeverity})`);
+        }
+    } catch (error) {
+        console.error(`⚠️ [CVSS] Failed to auto-calculate for Q${question.id}:`, error);
+    }
+
     return {
         questionId: question.id,
         section: question.section,
@@ -53,7 +73,14 @@ const createQuestionResult = (question: any, analysis: any) => {
             mitigation: analysis.mitigation || '',
             impactLabel: analysis.impactLabel,
             likelihoodLabel: analysis.likelihoodLabel,
-            impactDescription: analysis.impactDescription
+            impactDescription: analysis.impactDescription,
+            // 🆕 Add CVSS data if calculated
+            ...(cvssData && {
+                cvssScore: cvssData.cvssScore,
+                cvssSeverity: cvssData.cvssSeverity,
+                cvssMetrics: cvssData.cvssMetrics,
+                cvssVectorString: cvssData.cvssVectorString
+            })
         },
         timestamp: new Date()
     };

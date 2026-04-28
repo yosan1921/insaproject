@@ -14,6 +14,12 @@ interface Threat {
     enhancedScore: number;
     threatWeight: number;
     fetchedAt: string;
+
+    // CVSS Integration
+    cvssScore?: number;
+    cvssSeverity?: string;
+    cveIds?: string[];
+
     assetId?: {
         _id: string;
         ip: string;
@@ -232,77 +238,185 @@ export default function ThreatsPage() {
                         </p>
                     </div>
                 ) : (
-                    <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
+                    <>
+                        {/* Desktop Table View - Hidden on mobile */}
+                        <div className="hidden lg:block bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+                            <table className="w-full text-xs table-fixed">
                                 <thead>
                                     <tr className="text-slate-400 text-xs uppercase border-b border-slate-700">
-                                        <th className="px-6 py-3 text-left">Company</th>
-                                        <th className="px-6 py-3 text-left">Asset</th>
-                                        <th className="px-6 py-3 text-left">Source</th>
-                                        <th className="px-6 py-3 text-left">Threat Type</th>
-                                        <th className="px-6 py-3 text-left">Severity</th>
-                                        <th className="px-6 py-3 text-left">Description</th>
-                                        <th className="px-6 py-3 text-left">Original Score</th>
-                                        <th className="px-6 py-3 text-left">Enhanced Score</th>
-                                        <th className="px-6 py-3 text-left">Detected At</th>
+                                        <th className="px-3 py-2 text-left w-[10%]">Company</th>
+                                        <th className="px-3 py-2 text-left w-[12%]">Asset</th>
+                                        <th className="px-3 py-2 text-left w-[8%]">Source</th>
+                                        <th className="px-3 py-2 text-left w-[10%]">Threat Type</th>
+                                        <th className="px-3 py-2 text-left w-[8%]">Severity</th>
+                                        <th className="px-3 py-2 text-left w-[9%]">CVSS</th>
+                                        <th className="px-3 py-2 text-left w-[18%]">Description</th>
+                                        <th className="px-3 py-2 text-left w-[7%]">Original</th>
+                                        <th className="px-3 py-2 text-left w-[8%]">Enhanced</th>
+                                        <th className="px-3 py-2 text-left w-[10%]">Detected</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filtered.map((threat) => (
                                         <tr key={threat._id} className="border-b border-slate-700/50 hover:bg-slate-700/30 transition">
-                                            <td className="px-6 py-3 text-white font-semibold">{threat.company}</td>
-                                            <td className="px-6 py-3">
+                                            <td className="px-3 py-2 text-white font-semibold truncate">{threat.company}</td>
+                                            <td className="px-3 py-2">
                                                 {threat.assetId ? (
                                                     <div className="text-xs">
-                                                        <div className="text-blue-400 font-mono font-semibold">{threat.assetId.ip}</div>
+                                                        <div className="text-blue-400 font-mono font-semibold truncate">{threat.assetId.ip}</div>
                                                         {threat.assetId.hostname && (
-                                                            <div className="text-slate-400">{threat.assetId.hostname}</div>
-                                                        )}
-                                                        {threat.assetId.os && (
-                                                            <div className="text-slate-500">{threat.assetId.os}</div>
+                                                            <div className="text-slate-400 truncate">{threat.assetId.hostname}</div>
                                                         )}
                                                     </div>
                                                 ) : (
                                                     <span className="text-slate-500 text-xs">Unknown</span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-3">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${SOURCE_STYLES[threat.source]}`}>
+                                            <td className="px-3 py-2">
+                                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${SOURCE_STYLES[threat.source]}`}>
                                                     {threat.source}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-3 text-slate-300">{threat.threatType}</td>
-                                            <td className="px-6 py-3">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${SEVERITY_STYLES[threat.severity]}`}>
+                                            <td className="px-3 py-2 text-slate-300 truncate">{threat.threatType}</td>
+                                            <td className="px-3 py-2">
+                                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${SEVERITY_STYLES[threat.severity]}`}>
                                                     {threat.severity.toUpperCase()}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-3 text-slate-400 text-xs max-w-xs truncate" title={threat.description}>
+                                            <td className="px-3 py-2">
+                                                {threat.cvssScore !== undefined ? (
+                                                    <div className="text-xs">
+                                                        <div className={`font-mono font-bold ${threat.cvssScore >= 9.0 ? 'text-red-400' :
+                                                            threat.cvssScore >= 7.0 ? 'text-orange-400' :
+                                                                threat.cvssScore >= 4.0 ? 'text-yellow-400' :
+                                                                    'text-green-400'
+                                                            }`}>
+                                                            {threat.cvssScore.toFixed(1)}/10
+                                                        </div>
+                                                        {threat.cveIds && threat.cveIds.length > 0 && (
+                                                            <div className="text-slate-500 text-xs">{threat.cveIds.length} CVEs</div>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-slate-600 text-xs">N/A</span>
+                                                )}
+                                            </td>
+                                            <td className="px-3 py-2 text-slate-400 text-xs truncate" title={threat.description}>
                                                 {threat.description}
                                             </td>
-                                            <td className="px-6 py-3 text-slate-300 font-mono">{threat.originalRiskScore}/25</td>
-                                            <td className="px-6 py-3 font-mono font-bold">
+                                            <td className="px-3 py-2 text-slate-300 font-mono text-xs">{threat.originalRiskScore}/25</td>
+                                            <td className="px-3 py-2 font-mono font-bold text-xs">
                                                 <span className={threat.enhancedScore > threat.originalRiskScore ? "text-red-400" : "text-green-400"}>
                                                     {threat.enhancedScore}/25
                                                 </span>
                                                 {threat.enhancedScore > threat.originalRiskScore && (
-                                                    <span className="text-red-400 text-xs ml-1">
-                                                        (+{threat.threatWeight})
-                                                    </span>
+                                                    <div className="text-red-400 text-xs">
+                                                        +{threat.threatWeight}
+                                                    </div>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-3 text-slate-400 text-xs">
-                                                {new Date(threat.fetchedAt).toLocaleString()}
+                                            <td className="px-3 py-2 text-slate-400 text-xs">
+                                                {new Date(threat.fetchedAt).toLocaleDateString()}
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+
+                        {/* Mobile Card View - Visible on mobile/tablet */}
+                        <div className="lg:hidden space-y-4">
+                            {filtered.map((threat) => (
+                                <div key={threat._id} className="bg-slate-800 border border-slate-700 rounded-xl p-4 space-y-3">
+                                    {/* Header */}
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex-1">
+                                            <h3 className="text-white font-semibold text-sm">{threat.company}</h3>
+                                            <p className="text-slate-400 text-xs mt-1">{threat.threatType}</p>
+                                        </div>
+                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${SEVERITY_STYLES[threat.severity]}`}>
+                                            {threat.severity.toUpperCase()}
+                                        </span>
+                                    </div>
+
+                                    {/* Asset Info */}
+                                    {threat.assetId && (
+                                        <div className="bg-slate-900/50 rounded-lg p-3">
+                                            <p className="text-xs text-slate-400 mb-1">Asset</p>
+                                            <div className="text-xs">
+                                                <div className="text-blue-400 font-mono font-semibold">{threat.assetId.ip}</div>
+                                                {threat.assetId.hostname && (
+                                                    <div className="text-slate-400">{threat.assetId.hostname}</div>
+                                                )}
+                                                {threat.assetId.os && (
+                                                    <div className="text-slate-500">{threat.assetId.os}</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Metrics Grid */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <p className="text-xs text-slate-400 mb-1">Source</p>
+                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${SOURCE_STYLES[threat.source]}`}>
+                                                {threat.source}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-slate-400 mb-1">CVSS Score</p>
+                                            {threat.cvssScore !== undefined ? (
+                                                <div className="text-xs">
+                                                    <div className={`font-mono font-bold ${threat.cvssScore >= 9.0 ? 'text-red-400' :
+                                                        threat.cvssScore >= 7.0 ? 'text-orange-400' :
+                                                            threat.cvssScore >= 4.0 ? 'text-yellow-400' :
+                                                                'text-green-400'
+                                                        }`}>
+                                                        {threat.cvssScore.toFixed(1)}/10
+                                                    </div>
+                                                    {threat.cveIds && threat.cveIds.length > 0 && (
+                                                        <div className="text-slate-500 text-xs">{threat.cveIds.length} CVEs</div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="text-slate-600 text-xs">N/A</span>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-slate-400 mb-1">Original Score</p>
+                                            <p className="text-slate-300 font-mono text-sm">{threat.originalRiskScore}/25</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-slate-400 mb-1">Enhanced Score</p>
+                                            <p className={`font-mono font-bold text-sm ${threat.enhancedScore > threat.originalRiskScore ? "text-red-400" : "text-green-400"}`}>
+                                                {threat.enhancedScore}/25
+                                                {threat.enhancedScore > threat.originalRiskScore && (
+                                                    <span className="text-red-400 text-xs ml-1">
+                                                        (+{threat.threatWeight})
+                                                    </span>
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Description */}
+                                    <div>
+                                        <p className="text-xs text-slate-400 mb-1">Description</p>
+                                        <p className="text-slate-300 text-xs">{threat.description}</p>
+                                    </div>
+
+                                    {/* Footer */}
+                                    <div className="pt-2 border-t border-slate-700">
+                                        <p className="text-slate-500 text-xs">
+                                            Detected: {new Date(threat.fetchedAt).toLocaleString()}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </>
                 )}
             </div>
-        </Layout>
+        </Layout >
     );
 }

@@ -32,10 +32,12 @@ export async function GET(request: NextRequest) {
             question: a.question,
             riskLevel: a.analysis?.riskLevel || 'UNKNOWN',
             riskScore: a.analysis?.riskScore || 0,
-            inherentRisk: a.analysis?.riskScore || 0,
+            inherentRisk: a.analysis?.inherentRisk || a.analysis?.riskScore || 0,
             residualRisk: a.analysis?.residualRisk ?? null,
             treatmentOption: a.analysis?.treatmentOption || null,
             treatmentNote: a.analysis?.treatmentNote || '',
+            riskReduction: a.analysis?.riskReduction || 0,
+            riskReductionPercent: a.analysis?.riskReductionPercent || 0,
         }));
 
         return NextResponse.json({ success: true, treatments, company: analysis.company });
@@ -76,15 +78,65 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Question not found at index ' + questionIdx }, { status: 404 });
         }
 
-        // Update the correct question in the correct level array
+        // Get the array for this level FIRST
         const arr = (analysis as any)[target.level] as any[];
+
+        // Get inherent risk (current risk score)
+        const inherentRisk = arr[target.localIdx].analysis?.riskScore || 0;
+
+        // Calculate residual risk based on treatment option if not provided
+        let calculatedResidualRisk = inherentRisk;
+
+        if (residualRisk !== undefined && residualRisk !== null && residualRisk !== '') {
+            // User provided explicit residual risk
+            calculatedResidualRisk = Number(residualRisk);
+        } else {
+            // Auto-calculate based on treatment option
+            switch (treatmentOption) {
+                case 'avoid':
+                    // Avoid: Risk eliminated
+                    calculatedResidualRisk = 0;
+                    break;
+                case 'accept':
+                    // Accept: Risk remains the same
+                    calculatedResidualRisk = inherentRisk;
+                    break;
+                case 'mitigate':
+                    // Mitigate: Reduce risk by 60-80% (default 70%)
+                    calculatedResidualRisk = Math.round(inherentRisk * 0.3);
+                    break;
+                case 'transfer':
+                    // Transfer: Reduce risk by 40-60% (default 50%)
+                    calculatedResidualRisk = Math.round(inherentRisk * 0.5);
+                    break;
+                default:
+                    calculatedResidualRisk = inherentRisk;
+            }
+        }
+
+        // Validate: Residual risk should not exceed inherent risk (except for Accept)
+        if (treatmentOption !== 'accept' && calculatedResidualRisk > inherentRisk) {
+            return NextResponse.json({
+                error: `Residual risk (${calculatedResidualRisk}) cannot exceed inherent risk (${inherentRisk}) for ${treatmentOption} strategy`
+            }, { status: 400 });
+        }
+
+        // Validate: Residual risk must be within valid range (0-25)
+        if (calculatedResidualRisk < 0 || calculatedResidualRisk > 25) {
+            return NextResponse.json({
+                error: `Residual risk must be between 0 and 25. Got: ${calculatedResidualRisk}`
+            }, { status: 400 });
+        }
+
+        // Update the correct question in the correct level array
         arr[target.localIdx].analysis = {
             ...arr[target.localIdx].analysis,
             treatmentOption,
-            residualRisk: residualRisk !== undefined && residualRisk !== null && residualRisk !== ''
-                ? Number(residualRisk)
-                : arr[target.localIdx].analysis?.riskScore,
+            inherentRisk, // Store inherent risk
+            residualRisk: calculatedResidualRisk,
             treatmentNote: treatmentNote || '',
+            riskReduction: inherentRisk - calculatedResidualRisk, // Calculate reduction
+            riskReductionPercent: inherentRisk > 0 ? Math.round(((inherentRisk - calculatedResidualRisk) / inherentRisk) * 100) : 0,
         };
 
         analysis.markModified('operational');

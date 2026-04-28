@@ -1,6 +1,7 @@
 import dbConnect from '@/lib/mongodb';
 import ThreatIntelligence from '@/models/ThreatIntelligence';
 import Asset from '@/models/Asset';
+import { fetchMultipleCVEs, getCVSSSeverity } from './cvssService';
 
 // Threat weight values used to calculate enhanced score
 const THREAT_WEIGHTS = {
@@ -94,22 +95,71 @@ async function fetchVirusTotal(ip: string, apiKey: string): Promise<any[]> {
  */
 async function fetchShodan(ip: string, apiKey: string): Promise<any[]> {
     try {
+        console.log(`🔍 [Shodan] Scanning ${ip}...`);
         const res = await fetch(`https://api.shodan.io/shodan/host/${ip}?key=${apiKey}`);
 
-        if (!res.ok) return [];
+        if (!res.ok) {
+            console.warn(`⚠️ [Shodan] API returned ${res.status} for ${ip}`);
+            return [];
+        }
 
         const data = await res.json();
         const threats = [];
-        const vulns = data?.vulns ? Object.keys(data.vulns) : [];
+
+        // Shodan returns vulns as an object where keys are CVE IDs
+        // Filter to only get actual CVE IDs (format: CVE-YYYY-NNNNN)
+        const vulnsObj = data?.vulns || {};
+        const allKeys = Object.keys(vulnsObj);
+        const vulns = allKeys.filter(key => key.startsWith('CVE-'));
+
+        console.log(`📊 [Shodan] Raw vulnerability keys: ${allKeys.slice(0, 10).join(', ')}${allKeys.length > 10 ? '...' : ''}`);
+        console.log(`📊 [Shodan] Found ${vulns.length} CVE vulnerabilities for ${ip} (total entries: ${allKeys.length})`);
 
         if (vulns.length > 0) {
+            console.log(`🔍 [Shodan] CVE IDs: ${vulns.slice(0, 5).join(', ')}`);
+
+            // Extract CVE IDs and fetch CVSS scores
+            const cveData = await fetchMultipleCVEs(vulns.slice(0, 5)); // Limit to 5 to avoid rate limits
+
+            let maxCVSS = 0;
+            const cveDetails: string[] = [];
+
+            for (const [cveId, cve] of cveData.entries()) {
+                if (cve.cvssScore) {
+                    maxCVSS = Math.max(maxCVSS, cve.cvssScore.baseScore);
+                    cveDetails.push(`${cveId} (CVSS: ${cve.cvssScore.baseScore})`);
+                    console.log(`✅ [CVSS] ${cveId}: ${cve.cvssScore.baseScore}`);
+                }
+            }
+
+            console.log(`📊 [Shodan] Max CVSS score: ${maxCVSS}`);
+
+            // Determine severity based on CVSS score
+            let severity: string;
+            if (maxCVSS >= 9.0) severity = 'critical';
+            else if (maxCVSS >= 7.0) severity = 'high';
+            else if (maxCVSS >= 4.0) severity = 'medium';
+            else if (vulns.length > 3) severity = 'high';
+            else if (vulns.length > 1) severity = 'medium';
+            else severity = 'low';
+
+            const description = cveDetails.length > 0
+                ? `Shodan: ${vulns.length} vulnerabilities found. Top CVEs: ${cveDetails.slice(0, 3).join(', ')}${vulns.length > 3 ? '...' : ''}`
+                : `Shodan: ${vulns.length} known vulnerabilities found (${vulns.slice(0, 3).join(', ')}${vulns.length > 3 ? '...' : ''})`;
+
             threats.push({
                 source: 'shodan',
                 threatType: 'Known Vulnerabilities',
-                severity: vulns.length > 3 ? 'critical' : vulns.length > 1 ? 'high' : 'medium',
-                description: `Shodan: ${vulns.length} known vulnerabilities found (${vulns.slice(0, 3).join(', ')}${vulns.length > 3 ? '...' : ''})`,
-                rawData: { vulns: data.vulns, ports: data.ports, org: data.org },
+                severity,
+                description,
+                cvssScore: maxCVSS > 0 ? maxCVSS : undefined,
+                cveIds: vulns,
+                rawData: { vulns: data.vulns, ports: data.ports, org: data.org, cveData: Array.from(cveData.values()) },
             });
+
+            console.log(`✅ [Shodan] Created threat with CVSS: ${maxCVSS > 0 ? maxCVSS : 'N/A'}`);
+        } else {
+            console.log(`✅ [Shodan] No CVE vulnerabilities found for ${ip} (${Object.keys(vulnsObj).length} total entries, but no CVE IDs)`);
         }
 
         if (data?.ports?.length > 10) {
@@ -124,8 +174,8 @@ async function fetchShodan(ip: string, apiKey: string): Promise<any[]> {
 
         return threats;
     } catch (err: any) {
-        console.warn(`[ThreatIntel] Shodan failed for ${ip}:`, err.message);
-        return [];
+        console.warn(`⚠️ [ThreatIntel] Shodan failed for ${ip}:`, err.message);
+        throw err;
     }
 }
 
@@ -350,6 +400,12 @@ export async function fetchAndSaveThreats(params: {
                     originalRiskScore,
                     enhancedScore, // Same for all threats from this asset
                     threatWeight: weight,
+
+                    // CVSS Integration (SRS Requirement)
+                    cvssScore: threat.cvssScore,
+                    cvssSeverity: threat.cvssScore ? getCVSSSeverity(threat.cvssScore) : undefined,
+                    cveIds: threat.cveIds,
+
                     rawData: threat.rawData,
                     fetchedAt: new Date(),
                 });
@@ -380,6 +436,16 @@ export async function fetchAndSaveThreats(params: {
                 await notifyThreatFound({ company, threatCount: totalThreats, maxSeverity });
             } catch (notifErr) {
                 console.error('❌ [ThreatIntel] Notification failed:', notifErr);
+            }
+
+            // 🆕 AUTO-TRIGGER CVSS RECALCULATION
+            // When new threats with CVEs are detected, trigger CVSS update for affected risks
+            try {
+                console.log('🔄 [CVSS] Auto-triggering CVSS recalculation for new threats...');
+                const { recalculateCVSSForThreats } = await import('./cvssIntegrationService');
+                await recalculateCVSSForThreats(questionnaireId);
+            } catch (cvssErr) {
+                console.error('❌ [CVSS] Auto-trigger failed:', cvssErr);
             }
         }
 

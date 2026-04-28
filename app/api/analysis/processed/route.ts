@@ -66,6 +66,7 @@ export async function GET() {
                 analyses: allAnalyses.map((a: any) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
                     questionId: a.questionId,
                     level: a.level,
+                    section: a.section || '',
                     question: a.question,
                     answer: a.answer,
 
@@ -101,7 +102,21 @@ export async function GET() {
                     threat: a.analysis?.threat || '',
                     mitigation: a.analysis?.mitigation || '',
                     impactLabel: a.analysis?.impactLabel || '',
-                    impactDescription: a.analysis?.impactDescription || ''
+                    impactDescription: a.analysis?.impactDescription || '',
+
+                    // CVSS fields (for CVSS Dashboard)
+                    cvssScore: a.analysis?.cvssScore,
+                    cvssSeverity: a.analysis?.cvssSeverity,
+                    cvssMetrics: a.analysis?.cvssMetrics,
+                    cvssVectorString: a.analysis?.cvssVectorString,
+
+                    // ALE/SLE fields (for ALE Dashboard)
+                    assetValue: a.analysis?.assetValue,
+                    exposureFactor: a.analysis?.exposureFactor,
+                    sle: a.analysis?.sle,
+                    aro: a.analysis?.aro,
+                    ale: a.analysis?.ale,
+                    currency: a.analysis?.currency
                 })),
                 riskMatrix: riskMatrixArray,
                 summary: analysis.summary

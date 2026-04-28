@@ -11,6 +11,12 @@ export interface IThreatIntelligence extends Document {
     originalRiskScore: number;
     enhancedScore: number;
     threatWeight: number;
+
+    // CVSS Integration (SRS Requirement: Quantitative Scoring)
+    cvssScore?: number; // CVSS Base Score (0.0 - 10.0)
+    cvssSeverity?: string; // NONE, LOW, MEDIUM, HIGH, CRITICAL
+    cveIds?: string[]; // Associated CVE IDs
+
     rawData: any;
     fetchedAt: Date;
     createdAt: Date;
@@ -37,6 +43,12 @@ const ThreatIntelligenceSchema = new Schema<IThreatIntelligence>(
         originalRiskScore: { type: Number, default: 0 },
         enhancedScore: { type: Number, default: 0 },
         threatWeight: { type: Number, default: 0 },
+
+        // CVSS Integration
+        cvssScore: { type: Number, min: 0, max: 10 },
+        cvssSeverity: { type: String, enum: ['NONE', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] },
+        cveIds: [{ type: String }],
+
         rawData: { type: Schema.Types.Mixed },
         fetchedAt: { type: Date, default: Date.now },
     },

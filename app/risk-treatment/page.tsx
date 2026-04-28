@@ -38,6 +38,15 @@ interface Treatment {
   residualRisk: number | null;
   treatmentOption: string | null;
   treatmentNote: string;
+  riskReduction?: number;
+  riskReductionPercent?: number;
+  // Financial Risk (ALE/SLE)
+  assetValue?: number;
+  exposureFactor?: number;
+  sle?: number;
+  aro?: number;
+  ale?: number;
+  currency?: string;
 }
 
 type MessageState =
@@ -92,6 +101,11 @@ export default function RiskTreatmentPage() {
   const [editOption, setEditOption] = useState("");
   const [editResidual, setEditResidual] = useState("");
   const [editNote, setEditNote] = useState("");
+
+  // Financial Risk state
+  const [editAssetValue, setEditAssetValue] = useState("");
+  const [showFinancialForm, setShowFinancialForm] = useState<number | null>(null);
+  const [calculatingFinancial, setCalculatingFinancial] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -535,7 +549,7 @@ export default function RiskTreatmentPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <p className="text-white text-sm font-medium">{t.question}</p>
-                        <div className="flex items-center gap-3 mt-2">
+                        <div className="flex items-center gap-3 mt-2 flex-wrap">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${RISK_COLORS[t.riskLevel] || RISK_COLORS.LOW}`}>
                             {t.riskLevel}
                           </span>
@@ -543,9 +557,16 @@ export default function RiskTreatmentPage() {
                             Inherent: <span className="text-red-400 font-mono">{t.inherentRisk}/25</span>
                           </span>
                           {t.residualRisk !== null && (
-                            <span className="text-slate-400 text-xs">
-                              Residual: <span className="text-green-400 font-mono">{t.residualRisk}/25</span>
-                            </span>
+                            <>
+                              <span className="text-slate-400 text-xs">
+                                Residual: <span className="text-green-400 font-mono">{t.residualRisk}/25</span>
+                              </span>
+                              {t.riskReduction !== undefined && t.riskReduction > 0 && (
+                                <span className="text-emerald-400 text-xs font-semibold">
+                                  ↓ {t.riskReduction} ({t.riskReductionPercent}% reduction)
+                                </span>
+                              )}
+                            </>
                           )}
                           {t.treatmentOption && (
                             <span className={`px-2 py-0.5 rounded text-xs font-bold text-white ${TREATMENT_OPTIONS.find(o => o.value === t.treatmentOption)?.color || 'bg-slate-600'
@@ -590,16 +611,22 @@ export default function RiskTreatmentPage() {
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-xs text-slate-400 mb-1">Residual Risk Score (0-25)</label>
+                            <label className="block text-xs text-slate-400 mb-1">
+                              Residual Risk Score (0-25)
+                              <span className="text-emerald-400 ml-1">✨ Auto-calculated</span>
+                            </label>
                             <input
                               type="number"
                               min={0}
                               max={25}
                               value={editResidual}
                               onChange={(e) => setEditResidual(e.target.value)}
-                              placeholder="After treatment..."
+                              placeholder="Leave empty for auto-calc"
                               className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-1.5 text-sm"
                             />
+                            <p className="text-xs text-slate-500 mt-1">
+                              Auto: Avoid=0, Accept=same, Mitigate=-70%, Transfer=-50%
+                            </p>
                           </div>
                           <div>
                             <label className="block text-xs text-slate-400 mb-1">Treatment Note</label>

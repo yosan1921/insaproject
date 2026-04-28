@@ -30,6 +30,21 @@ export interface IQuestionAnalysis {
     riskLevel: string;
     riskColor: string;
 
+    // CVSS Integration (SRS Requirement: Quantitative Scoring)
+    cvssScore?: number; // CVSS Base Score (0.0 - 10.0)
+    cvssSeverity?: string; // NONE, LOW, MEDIUM, HIGH, CRITICAL
+    cvssMetrics?: {
+      attackVector?: 'N' | 'A' | 'L' | 'P'; // Network, Adjacent, Local, Physical
+      attackComplexity?: 'L' | 'H'; // Low, High
+      privilegesRequired?: 'N' | 'L' | 'H'; // None, Low, High
+      userInteraction?: 'N' | 'R'; // None, Required
+      scope?: 'U' | 'C'; // Unchanged, Changed
+      confidentiality?: 'N' | 'L' | 'H'; // None, Low, High
+      integrity?: 'N' | 'L' | 'H'; // None, Low, High
+      availability?: 'N' | 'L' | 'H'; // None, Low, High
+    };
+    cvssVectorString?: string; // e.g., "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+
     // Post-Mitigation (percentage based)
     postMitigation?: {
       probability: number; // percentage (0-100)
@@ -37,6 +52,22 @@ export interface IQuestionAnalysis {
       score: number; // calculated
       cost: number; // financial cost
     };
+
+    // Risk Treatment (SRS Requirement: Inherent vs Residual Risk)
+    treatmentOption?: 'mitigate' | 'transfer' | 'avoid' | 'accept';
+    treatmentNote?: string;
+    inherentRisk?: number; // Original risk score before treatment (1-25)
+    residualRisk?: number; // Risk score after treatment (0-25)
+    riskReduction?: number; // Inherent - Residual
+    riskReductionPercent?: number; // Percentage reduction
+
+    // Financial Risk Quantification (SRS Requirement: ALE/SLE)
+    assetValue?: number; // Value of asset at risk (in currency)
+    exposureFactor?: number; // Percentage of asset value at risk (0.0-1.0)
+    sle?: number; // Single Loss Expectancy = Asset Value × Exposure Factor
+    aro?: number; // Annual Rate of Occurrence (times per year)
+    ale?: number; // Annual Loss Expectancy = SLE × ARO
+    currency?: string; // Currency code (USD, EUR, etc.)
 
     // Mitigation details
     mitigationCost?: number;
@@ -110,6 +141,21 @@ const QuestionAnalysisSchema = new Schema({
     riskLevel: { type: String, required: true, enum: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'VERY_LOW'] },
     riskColor: String,
 
+    // CVSS Integration (SRS Requirement: Quantitative Scoring)
+    cvssScore: { type: Number, min: 0, max: 10 },
+    cvssSeverity: { type: String, enum: ['NONE', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] },
+    cvssMetrics: {
+      attackVector: { type: String, enum: ['N', 'A', 'L', 'P'] },
+      attackComplexity: { type: String, enum: ['L', 'H'] },
+      privilegesRequired: { type: String, enum: ['N', 'L', 'H'] },
+      userInteraction: { type: String, enum: ['N', 'R'] },
+      scope: { type: String, enum: ['U', 'C'] },
+      confidentiality: { type: String, enum: ['N', 'L', 'H'] },
+      integrity: { type: String, enum: ['N', 'L', 'H'] },
+      availability: { type: String, enum: ['N', 'L', 'H'] }
+    },
+    cvssVectorString: String,
+
     // Post-Mitigation (percentage based)
     postMitigation: {
       probability: { type: Number, min: 0, max: 100 }, // percentage (0-100)
@@ -117,6 +163,22 @@ const QuestionAnalysisSchema = new Schema({
       score: { type: Number, min: 0 }, // calculated
       cost: { type: Number, min: 0 } // financial cost
     },
+
+    // Risk Treatment (SRS Requirement: Inherent vs Residual Risk)
+    treatmentOption: { type: String, enum: ['mitigate', 'transfer', 'avoid', 'accept'] },
+    treatmentNote: String,
+    inherentRisk: { type: Number, min: 0, max: 25 },
+    residualRisk: { type: Number, min: 0, max: 25 },
+    riskReduction: { type: Number, min: 0 },
+    riskReductionPercent: { type: Number, min: 0, max: 100 },
+
+    // Financial Risk Quantification (SRS Requirement: ALE/SLE)
+    assetValue: { type: Number, min: 0 },
+    exposureFactor: { type: Number, min: 0, max: 1 },
+    sle: { type: Number, min: 0 },
+    aro: { type: Number, min: 0 },
+    ale: { type: Number, min: 0 },
+    currency: { type: String, default: 'USD' },
 
     // Mitigation details
     mitigationCost: { type: Number, min: 0 },

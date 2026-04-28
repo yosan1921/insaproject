@@ -48,6 +48,7 @@ const MAIN_NAV: NavItem[] = [
     items: [
       { name: "Assessment", href: "/questionnaires" },
       { name: "Risk Evaluation", href: "/risk-evaluation" },
+      { name: "CVSS Dashboard", href: "/cvss-dashboard" },
       { name: "ALE Analysis", href: "/ale-analysis" },
       { name: "Trend Analysis", href: "/trends" },
     ],
@@ -99,12 +100,6 @@ const SYSTEM_NAV: NavItem[] = [
     name: "Profile",
     href: "/profile",
     icon: <HiOutlineUser className="w-5 h-5" />,
-  },
-  {
-    type: "single",
-    name: "Settings",
-    href: "/settings",
-    icon: <HiOutlineCog className="w-5 h-5" />,
   },
 ];
 

@@ -252,7 +252,7 @@ export default function DashboardPage() {
           <h3 className="text-lg font-bold text-white mb-4">
             Assessment Filters
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Company */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-2">
@@ -313,23 +313,6 @@ export default function DashboardPage() {
                     {id}
                   </option>
                 ))}
-              </select>
-            </div>
-
-            {/* Chart Type */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2">
-                Chart type
-              </label>
-              <select
-                value={chartType}
-                onChange={(e) =>
-                  setChartType(e.target.value as "pie" | "bar")
-                }
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white text-sm"
-              >
-                <option value="pie">Pie Chart</option>
-                <option value="bar">Bar Chart</option>
               </select>
             </div>
           </div>
