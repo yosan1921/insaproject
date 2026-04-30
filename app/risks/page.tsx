@@ -114,6 +114,7 @@ export default function RiskRegisterFromAssessmentsPage() {
 
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -368,6 +369,12 @@ export default function RiskRegisterFromAssessmentsPage() {
         <h1 className="text-3xl font-bold text-white">
           Risk Register (from Assessments)
         </h1>
+
+        {message && (
+          <div className={`p-4 rounded ${message.type === 'success' ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
+            {message.text}
+          </div>
+        )}
 
         {/* Filters */}
         <div className="bg-slate-800 rounded-lg border border-slate-700 p-4 space-y-4">
