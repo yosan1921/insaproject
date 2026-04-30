@@ -12,8 +12,9 @@ const createQuestionResult = (question: any, analysis: any) => {
         riskName = analysis.threat
             .replace(/\b(risk|threat|vulnerability|attack|issue|problem)\b/gi, '')
             .replace(/\s+/g, ' ')
-            .trim()
-            .toUpperCase();
+            .trim();
+        // Capitalize first letter only
+        riskName = riskName.charAt(0).toUpperCase() + riskName.slice(1).toLowerCase();
 
         // Limit to first 50 characters for readability
         if (riskName.length > 50) {
@@ -23,7 +24,7 @@ const createQuestionResult = (question: any, analysis: any) => {
 
     // Fallback: use question section or generic name
     if (!riskName) {
-        riskName = question.section ? question.section.toUpperCase() : `RISK-${question.id}`;
+        riskName = question.section ? question.section.charAt(0).toUpperCase() + question.section.slice(1).toLowerCase() : `Risk-${question.id}`;
     }
 
     return {

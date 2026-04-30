@@ -1,13 +1,8 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI: string | undefined = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  throw new Error(
-    "Please define the MONGODB_URI environment variable in .env.local file. " +
-    "Example: MONGODB_URI=mongodb://localhost:27017/csrars"
-  );
-}
+const MONGODB_URI: string =
+  process.env.MONGODB_URI ||
+  "mongodb+srv://nadhii:1234@cluster0.k0mhuox.mongodb.net/csrars?retryWrites=true&w=majority&appName=Cluster0";
 
 interface MongooseCache {
   conn: mongoose.Connection | null;
